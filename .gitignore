@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-test/
+tmp/
+.vscode-test/
+.vscode/debug.env
+coverage/
+*.vsix
+*.log

@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "在 VS Code 中调试",
+      "type": "extensionHost",
+      "request": "attach",
+      "port": 29333,
+      "timeout": 60000,
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ],
+      "sourceMaps": true,
+      "preLaunchTask": "launch-vscode-dev-host-debug"
+    },
+    {
+      "name": "在 VS Code 中启动",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/open-vscode-dev-host.mjs",
+      "cwd": "${workspaceFolder}",
+      "noDebug": true,
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: build"
+    },
+    {
+      "name": "在 Cursor 中调试",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ],
+      "sourceMaps": true,
+      "preLaunchTask": "npm: build"
+    }
+  ]
+}

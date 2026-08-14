@@ -1,0 +1,201 @@
+{
+  "name": "my-bookmark",
+  "displayName": "My Bookmark",
+  "description": "支持文件夹分组、自定义备注与手动排序的全局书签管理，跨工作区、跨 Profile、多窗口实时同步。",
+  "version": "0.0.1",
+  "publisher": "saltcoreyan",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eden36/vscode-my-bookmark.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "extensionKind": [
+    "ui"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "bookmark",
+    "bookmarks",
+    "navigation",
+    "favorites"
+  ],
+  "main": "./dist/extension.js",
+  "files": [
+    "dist/**",
+    "media/**",
+    "LICENSE",
+    "README.md"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "myBookmark",
+          "title": "My Bookmark",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "myBookmark": [
+        {
+          "id": "myBookmark.tree",
+          "name": "书签",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "commands": [
+      { "command": "myBookmark.toggle", "title": "My Bookmark: 切换书签" },
+      { "command": "myBookmark.toggleWithNote", "title": "My Bookmark: 添加书签并填写备注" },
+      { "command": "myBookmark.jumpToNext", "title": "My Bookmark: 跳到下一个书签" },
+      { "command": "myBookmark.jumpToPrevious", "title": "My Bookmark: 跳到上一个书签" },
+      { "command": "myBookmark.listFromAll", "title": "My Bookmark: 搜索全部书签" },
+      { "command": "myBookmark.editNote", "title": "编辑备注", "icon": "$(edit)" },
+      { "command": "myBookmark.setColor", "title": "设置颜色" },
+      { "command": "myBookmark.newFolder", "title": "新建文件夹", "icon": "$(new-folder)" },
+      { "command": "myBookmark.renameFolder", "title": "重命名" },
+      { "command": "myBookmark.deleteFolder", "title": "删除文件夹" },
+      { "command": "myBookmark.moveUp", "title": "上移" },
+      { "command": "myBookmark.moveDown", "title": "下移" },
+      { "command": "myBookmark.remove", "title": "删除", "icon": "$(trash)" },
+      { "command": "myBookmark.removeAll", "title": "My Bookmark: 删除全部书签" },
+      { "command": "myBookmark.toggleScope", "title": "切换显示范围", "icon": "$(filter)" },
+      { "command": "myBookmark.reanchorAll", "title": "My Bookmark: 重新锚定全部书签" },
+      { "command": "myBookmark.repairTree", "title": "My Bookmark: 清理孤立书签" },
+      { "command": "myBookmark.rebalanceOrder", "title": "My Bookmark: 重排书签顺序" },
+      { "command": "myBookmark.showLogs", "title": "My Bookmark: 显示日志" }
+    ],
+    "keybindings": [
+      { "command": "myBookmark.toggle", "key": "ctrl+alt+k", "mac": "cmd+alt+k", "when": "editorTextFocus" },
+      { "command": "myBookmark.toggleWithNote", "key": "ctrl+alt+shift+k", "mac": "cmd+alt+shift+k", "when": "editorTextFocus" },
+      { "command": "myBookmark.jumpToNext", "key": "ctrl+alt+l", "mac": "cmd+alt+l", "when": "editorTextFocus" },
+      { "command": "myBookmark.jumpToPrevious", "key": "ctrl+alt+j", "mac": "cmd+alt+j", "when": "editorTextFocus" },
+      { "command": "myBookmark.moveUp", "key": "alt+up", "when": "focusedView == myBookmark.tree" },
+      { "command": "myBookmark.moveDown", "key": "alt+down", "when": "focusedView == myBookmark.tree" }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "myBookmark.editNote", "when": "false" },
+        { "command": "myBookmark.setColor", "when": "false" },
+        { "command": "myBookmark.renameFolder", "when": "false" },
+        { "command": "myBookmark.deleteFolder", "when": "false" },
+        { "command": "myBookmark.moveUp", "when": "false" },
+        { "command": "myBookmark.moveDown", "when": "false" },
+        { "command": "myBookmark.remove", "when": "false" }
+      ],
+      "view/title": [
+        { "command": "myBookmark.newFolder", "when": "view == myBookmark.tree", "group": "navigation@1" },
+        { "command": "myBookmark.toggleScope", "when": "view == myBookmark.tree", "group": "navigation@2" },
+        { "command": "myBookmark.repairTree", "when": "view == myBookmark.tree", "group": "1_maintenance@1" },
+        { "command": "myBookmark.rebalanceOrder", "when": "view == myBookmark.tree", "group": "1_maintenance@2" },
+        { "command": "myBookmark.reanchorAll", "when": "view == myBookmark.tree", "group": "1_maintenance@3" },
+        { "command": "myBookmark.removeAll", "when": "view == myBookmark.tree", "group": "9_danger@1" }
+      ],
+      "view/item/context": [
+        { "command": "myBookmark.editNote", "when": "view == myBookmark.tree && viewItem == bookmark", "group": "inline@1" },
+        { "command": "myBookmark.remove", "when": "view == myBookmark.tree && viewItem == bookmark", "group": "inline@2" },
+        { "command": "myBookmark.editNote", "when": "view == myBookmark.tree && viewItem == bookmark", "group": "1_edit@1" },
+        { "command": "myBookmark.setColor", "when": "view == myBookmark.tree", "group": "1_edit@2" },
+        { "command": "myBookmark.renameFolder", "when": "view == myBookmark.tree && viewItem == folder", "group": "1_edit@3" },
+        { "command": "myBookmark.moveUp", "when": "view == myBookmark.tree", "group": "2_move@1" },
+        { "command": "myBookmark.moveDown", "when": "view == myBookmark.tree", "group": "2_move@2" },
+        { "command": "myBookmark.newFolder", "when": "view == myBookmark.tree && viewItem == folder", "group": "3_create@1" },
+        { "command": "myBookmark.remove", "when": "view == myBookmark.tree && viewItem == bookmark", "group": "9_danger@1" },
+        { "command": "myBookmark.deleteFolder", "when": "view == myBookmark.tree && viewItem == folder", "group": "9_danger@1" }
+      ]
+    },
+    "configuration": {
+      "title": "My Bookmark",
+      "properties": {
+        "myBookmark.dataDirectory": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "书签数据的存放目录。留空使用系统默认的用户级共享目录；指向同步盘可在不启用设置同步的情况下跨设备共享。修改后需重新加载窗口。"
+        },
+        "myBookmark.sync.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "是否通过 VS Code 设置同步把书签同步到其他设备。**书签备注与文件路径会明文上传到你的账号**；关闭后仍保留本机跨窗口、跨 Profile 的共享能力。"
+        },
+        "myBookmark.sync.intervalMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 120,
+          "description": "检查其他设备是否有新书签的间隔（分钟）。"
+        },
+        "myBookmark.scope": {
+          "type": "string",
+          "enum": ["currentWorkspace", "all"],
+          "enumDescriptions": ["只显示属于当前工作区的书签", "显示全部书签"],
+          "default": "currentWorkspace",
+          "description": "侧边栏显示的书签范围。"
+        },
+        "myBookmark.sortMode": {
+          "type": "string",
+          "enum": ["manual", "path", "created", "note"],
+          "enumDescriptions": ["手动排序", "按文件路径与行号", "按创建时间", "按备注"],
+          "default": "manual",
+          "description": "侧边栏的排序方式。手动顺序始终保留，切换回来即可恢复。"
+        },
+        "myBookmark.showNoteInEditor": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否在编辑器的书签行尾显示备注。"
+        },
+        "myBookmark.pathMappings": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": { "type": "string" },
+          "markdownDescription": "跨设备路径前缀映射，仅用于工作区之外的文件。例如 `{\"D:\\\\projects\": \"/home/me/projects\"}`。"
+        }
+      }
+    },
+    "colors": [
+      { "id": "myBookmark.color.red", "description": "红色书签", "defaults": { "dark": "charts.red", "light": "charts.red", "highContrast": "charts.red" } },
+      { "id": "myBookmark.color.orange", "description": "橙色书签", "defaults": { "dark": "charts.orange", "light": "charts.orange", "highContrast": "charts.orange" } },
+      { "id": "myBookmark.color.yellow", "description": "黄色书签", "defaults": { "dark": "charts.yellow", "light": "charts.yellow", "highContrast": "charts.yellow" } },
+      { "id": "myBookmark.color.green", "description": "绿色书签", "defaults": { "dark": "charts.green", "light": "charts.green", "highContrast": "charts.green" } },
+      { "id": "myBookmark.color.blue", "description": "蓝色书签", "defaults": { "dark": "charts.blue", "light": "charts.blue", "highContrast": "charts.blue" } },
+      { "id": "myBookmark.color.purple", "description": "紫色书签", "defaults": { "dark": "charts.purple", "light": "charts.purple", "highContrast": "charts.purple" } },
+      { "id": "myBookmark.color.gray", "description": "灰色书签", "defaults": { "dark": "charts.lines", "light": "charts.lines", "highContrast": "charts.lines" } },
+      { "id": "myBookmark.color.default", "description": "未指定颜色的书签", "defaults": { "dark": "charts.foreground", "light": "charts.foreground", "highContrast": "charts.foreground" } }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "npm run build && node scripts/run-integration.mjs",
+    "lint": "eslint src test",
+    "check:unit": "npm run typecheck && npm run lint && npm test && npm run build",
+    "check": "npm run check:unit && npm run test:integration",
+    "package:vsix": "npm run check && vsce package --no-dependencies",
+    "publish:patch": "npm run check && vsce publish patch --no-dependencies",
+    "publish:minor": "npm run check && vsce publish minor --no-dependencies",
+    "publish:major": "npm run check && vsce publish major --no-dependencies",
+    "dev:vscode": "npm run build && node scripts/open-vscode-dev-host.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.17.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.8",
+    "eslint": "^10.8.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^3.2.4"
+  }
+}
