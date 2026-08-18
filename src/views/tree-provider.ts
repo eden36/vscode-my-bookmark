@@ -74,7 +74,10 @@ export class BookmarkTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.id = bookmark.id;
     item.contextValue = 'bookmark';
     item.description = `${fileName}:${line + 1}`;
-    item.iconPath = new vscode.ThemeIcon(missing ? 'warning' : 'bookmark', themeColor(bookmark.color));
+    // ThemeIcon 在选中行会被列表前景色盖掉；实心 SVG 当图片显示，颜色才能保住。
+    item.iconPath = missing
+      ? new vscode.ThemeIcon('warning', themeColor(bookmark.color))
+      : bookmarkIcon(bookmark.color);
     item.tooltip = this.tooltip(bookmark, line, uri, missing);
     if (uri !== undefined) {
       item.command = { command: 'myBookmark.open', title: '打开书签', arguments: [bookmark.id] };
@@ -105,6 +108,29 @@ export function nodeId(node: TreeNode): string {
 
 function themeColor(color: BookmarkColor | undefined): vscode.ThemeColor {
   return new vscode.ThemeColor(`myBookmark.color.${color ?? 'default'}`);
+}
+
+const BOOKMARK_SHAPE = 'M4.8 21V4.5A2.1 2.1 0 0 1 6.9 2.4h10.2A2.1 2.1 0 0 1 19.2 4.5V21L12 17.2z';
+
+// 填充色对齐 VS Code charts.* 默认值。ThemeIcon 选中时会被列表前景色盖掉，所以改用图片。
+const BOOKMARK_ICONS: Record<BookmarkColor | 'default', { light: vscode.Uri; dark: vscode.Uri }> = {
+  default: { light: svgIcon('#616161'), dark: svgIcon('#CCCCCC') },
+  red: { light: svgIcon('#E51400'), dark: svgIcon('#F14C4C') },
+  orange: { light: svgIcon('#D18616'), dark: svgIcon('#D18616') },
+  yellow: { light: svgIcon('#B89500'), dark: svgIcon('#B89500') },
+  green: { light: svgIcon('#388A34'), dark: svgIcon('#89D185') },
+  blue: { light: svgIcon('#1A85FF'), dark: svgIcon('#3794FF') },
+  purple: { light: svgIcon('#652D90'), dark: svgIcon('#B180D7') },
+  gray: { light: svgIcon('#616161'), dark: svgIcon('#CCCCCC') },
+};
+
+export function bookmarkIcon(color: BookmarkColor | undefined): { light: vscode.Uri; dark: vscode.Uri } {
+  return BOOKMARK_ICONS[color ?? 'default'];
+}
+
+function svgIcon(fill: string): vscode.Uri {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="${fill}" d="${BOOKMARK_SHAPE}"/></svg>`;
+  return vscode.Uri.parse(`data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`);
 }
 
 function locationLabel(bookmark: Bookmark): string {

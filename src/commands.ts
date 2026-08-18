@@ -3,7 +3,7 @@ import type { BookmarkService } from './bookmark-service';
 import { readConfig, updateScope } from './config';
 import { BOOKMARK_COLORS, type Bookmark, type BookmarkColor } from './core/model';
 import type { TreeNode } from './core/tree';
-import { nodeId, type BookmarkTreeProvider } from './views/tree-provider';
+import { bookmarkIcon, nodeId, type BookmarkTreeProvider } from './views/tree-provider';
 
 const COLOR_LABELS: Record<BookmarkColor, string> = {
   red: '红色',
@@ -49,22 +49,22 @@ export function registerCommands(
     register('myBookmark.toggle', async () => {
       const editor = vscode.window.activeTextEditor;
       if (editor === undefined) return;
-      await service.toggleLines(editor.document.uri, selectedLines(editor));
+      await service.toggleLines(editor.document.uri, [currentLine(editor)]);
     }),
 
     register('myBookmark.toggleWithNote', async () => {
       const editor = vscode.window.activeTextEditor;
       if (editor === undefined) return;
-      const lines = selectedLines(editor);
+      const target = currentLine(editor);
       const existing = service.getBookmarksForDocument(editor.document.uri)
-        .find((item) => lines.some((entry) => entry.line === service.getLine(item)));
+        .find((item) => service.getLine(item) === target.line);
       const note = await vscode.window.showInputBox({
         title: '书签备注',
         value: existing?.note ?? '',
-        prompt: lines.length > 1 ? `为选中的 ${lines.length} 行写一句说明` : '为这一行写一句说明',
+        prompt: '为这一行写一句说明',
       });
       if (note === undefined) return;
-      await service.toggleLines(editor.document.uri, lines, { note });
+      await service.toggleLines(editor.document.uri, [target], { note });
     }),
 
     register('myBookmark.jumpToNext', () => jumpTo(service, 1)),
@@ -113,8 +113,12 @@ export function registerCommands(
       if (ids.length === 0) return;
       const picked = await vscode.window.showQuickPick(
         [
-          { label: '默认', color: undefined as BookmarkColor | undefined },
-          ...BOOKMARK_COLORS.map((color) => ({ label: COLOR_LABELS[color], color })),
+          { label: '默认', iconPath: bookmarkIcon(undefined), color: undefined as BookmarkColor | undefined },
+          ...BOOKMARK_COLORS.map((color) => ({
+            label: COLOR_LABELS[color],
+            iconPath: bookmarkIcon(color),
+            color,
+          })),
         ],
         { title: '书签颜色' },
       );
@@ -276,14 +280,10 @@ async function jumpTo(service: BookmarkService, direction: 1 | -1): Promise<void
   editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenterIfOutsideViewport);
 }
 
-/** 多光标下每个光标各算一行；同一行上的多个光标只取一次。 */
-function selectedLines(editor: vscode.TextEditor): { line: number; lineText: string }[] {
-  const lines = new Map<number, { line: number; lineText: string }>();
-  for (const selection of editor.selections) {
-    const line = selection.active.line;
-    if (!lines.has(line)) lines.set(line, { line, lineText: editor.document.lineAt(line).text });
-  }
-  return [...lines.values()];
+/** 只取主光标所在行。选中代码块时也不展开成多行，避免一次操作给整段代码打标。 */
+function currentLine(editor: vscode.TextEditor): { line: number; lineText: string } {
+  const line = editor.selection.active.line;
+  return { line, lineText: editor.document.lineAt(line).text };
 }
 
 function countBookmarksUnder(service: BookmarkService, folderId: string): number {

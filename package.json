@@ -25,9 +25,11 @@
     "favorites"
   ],
   "main": "./dist/extension.js",
+  "icon": "assets/marketplace-icon.png",
   "files": [
     "dist/**",
     "media/**",
+    "assets/**",
     "LICENSE",
     "README.md"
   ],
@@ -77,9 +79,6 @@
     ],
     "keybindings": [
       { "command": "myBookmark.toggle", "key": "ctrl+alt+k", "mac": "cmd+alt+k", "when": "editorTextFocus" },
-      { "command": "myBookmark.toggleWithNote", "key": "ctrl+alt+shift+k", "mac": "cmd+alt+shift+k", "when": "editorTextFocus" },
-      { "command": "myBookmark.jumpToNext", "key": "ctrl+alt+l", "mac": "cmd+alt+l", "when": "editorTextFocus" },
-      { "command": "myBookmark.jumpToPrevious", "key": "ctrl+alt+j", "mac": "cmd+alt+j", "when": "editorTextFocus" },
       { "command": "myBookmark.moveUp", "key": "alt+up", "when": "focusedView == myBookmark.tree" },
       { "command": "myBookmark.moveDown", "key": "alt+down", "when": "focusedView == myBookmark.tree" }
     ],

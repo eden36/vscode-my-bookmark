@@ -1,7 +1,9 @@
 /**
  * 行号跟踪：把一次文档编辑折算成书签行号的位移。
  *
- * 刻意不引用 vscode 的类型，调用方负责把 TextDocumentContentChangeEvent 转换成 LineEdit。
+ * 书签只钉在单行行号上，不跟踪代码块区间。编辑落在某行上时该行书签不动；
+ * 只有严格在该行之后的书签才整体平移。刻意不引用 vscode 的类型，调用方负责
+ * 把 TextDocumentContentChangeEvent 转换成 LineEdit。
  */
 
 export interface LineEdit {
@@ -18,47 +20,32 @@ export interface TrackedLine {
   line: number;
 }
 
-export interface TrackResult {
-  /** 位置发生变化的书签及其新行号；未受影响的不会出现在这里。 */
-  moved: TrackedLine[];
-  /** 所在行被整体删除的书签 id。 */
-  removed: string[];
-}
-
 /**
- * 应用一组编辑，返回受影响的书签。
+ * 应用一组编辑，返回行号发生变化的书签。未受影响的不会出现在结果里。
  *
  * 多个编辑必须从文档末尾向前处理：VS Code 给出的各个变更坐标都是相对**同一份**编辑前
  * 文档的，先处理靠前的变更会让后面变更的坐标失效。
  */
-export function applyLineEdits(lines: readonly TrackedLine[], edits: readonly LineEdit[]): TrackResult {
-  if (lines.length === 0 || edits.length === 0) return { moved: [], removed: [] };
+export function applyLineEdits(lines: readonly TrackedLine[], edits: readonly LineEdit[]): TrackedLine[] {
+  if (lines.length === 0 || edits.length === 0) return [];
 
   const current = new Map(lines.map((entry) => [entry.id, entry.line]));
-  const removed = new Set<string>();
   const ordered = [...edits].sort((left, right) => right.startLine - left.startLine);
 
   for (const edit of ordered) {
-    const deletedLineCount = edit.endLineExclusive - edit.startLine;
-    const delta = edit.insertedLineCount - deletedLineCount;
+    const delta = edit.insertedLineCount - (edit.endLineExclusive - edit.startLine);
+    if (delta === 0) continue;
     for (const [id, line] of current) {
-      if (removed.has(id)) continue;
-      // 被删除区间内部的书签失去了依附的行；区间起始行本身保留，编辑通常只是改写该行。
-      if (deletedLineCount > 0 && line > edit.startLine && line < edit.endLineExclusive) {
-        removed.add(id);
-        continue;
-      }
-      if (line >= edit.endLineExclusive) current.set(id, line + delta);
+      if (line >= edit.endLineExclusive) current.set(id, Math.max(0, line + delta));
     }
   }
 
   const moved: TrackedLine[] = [];
   for (const entry of lines) {
-    if (removed.has(entry.id)) continue;
     const line = current.get(entry.id);
-    if (line !== undefined && line !== entry.line) moved.push({ id: entry.id, line: Math.max(0, line) });
+    if (line !== undefined && line !== entry.line) moved.push({ id: entry.id, line });
   }
-  return { moved, removed: [...removed] };
+  return moved;
 }
 
 /**

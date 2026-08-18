@@ -128,20 +128,22 @@ export class BookmarkService implements vscode.Disposable {
 
   // ---------------------------------------------------------------- 编辑跟踪
 
-  /** 记录未保存的行号变化。刻意不落盘：磁盘内容没变，其他窗口看到的就应该是旧行号。 */
+  /**
+   * 记录未保存的行号变化。刻意不落盘：磁盘内容没变，其他窗口看到的就应该是旧行号。
+   *
+   * 返回 true 表示这份文档有书签且发生了编辑，调用方应按行号重画装饰——即使没有书签位移，
+   * 也要避免旧的装饰区间被编辑撑成跨行。
+   */
   trackDocumentEdits(uri: vscode.Uri, edits: readonly LineEdit[]): boolean {
     const bookmarks = this.getBookmarksForDocument(uri);
     if (bookmarks.length === 0 || edits.length === 0) return false;
     const key = uri.toString();
     const tracked = bookmarks.map((item) => ({ id: item.id, line: this.getLine(item) }));
-    const { moved, removed } = applyLineEdits(tracked, edits);
-    if (moved.length === 0 && removed.length === 0) return false;
+    const moved = applyLineEdits(tracked, edits);
+    if (moved.length === 0) return true;
 
     const lines = this.liveLines.get(key) ?? new Map<string, number>();
     for (const entry of moved) lines.set(entry.id, entry.line);
-    // 所在行被整体删除的书签，在文档保存前只是「暂时无处可去」，不能立即删数据；
-    // 让它停在删除位置，用户撤销时会随实时行号一起恢复。
-    for (const id of removed) lines.set(id, Math.max(0, tracked.find((item) => item.id === id)?.line ?? 0));
     this.liveLines.set(key, lines);
     return true;
   }

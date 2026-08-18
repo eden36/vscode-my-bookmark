@@ -9,15 +9,12 @@ const lines = [
 
 describe('行号跟踪', () => {
   it('无书签或无编辑时不做任何事', () => {
-    expect(applyLineEdits([], [insert(0, 3)])).toEqual({ moved: [], removed: [] });
-    expect(applyLineEdits(lines, [])).toEqual({ moved: [], removed: [] });
+    expect(applyLineEdits([], [insert(0, 3)])).toEqual([]);
+    expect(applyLineEdits(lines, [])).toEqual([]);
   });
 
   it('在上方插入行时后续书签整体下移', () => {
-    const result = applyLineEdits(lines, [insert(2, 3)]);
-
-    expect(result.removed).toEqual([]);
-    expect(result.moved).toEqual([
+    expect(applyLineEdits(lines, [insert(2, 3)])).toEqual([
       { id: 'a', line: 8 },
       { id: 'b', line: 13 },
       { id: 'c', line: 23 },
@@ -25,39 +22,32 @@ describe('行号跟踪', () => {
   });
 
   it('在下方编辑不影响上方书签', () => {
-    const result = applyLineEdits(lines, [insert(30, 5)]);
-
-    expect(result).toEqual({ moved: [], removed: [] });
+    expect(applyLineEdits(lines, [insert(30, 5)])).toEqual([]);
   });
 
   it('删除上方的行时后续书签上移', () => {
-    const result = applyLineEdits(lines, [remove(0, 3)]);
-
-    expect(result.moved).toEqual([
+    expect(applyLineEdits(lines, [remove(0, 3)])).toEqual([
       { id: 'a', line: 2 },
       { id: 'b', line: 7 },
       { id: 'c', line: 17 },
     ]);
   });
 
-  it('书签所在行被整体删除时标记移除', () => {
-    const result = applyLineEdits(lines, [remove(8, 12)]);
-
-    expect(result.removed).toEqual(['b']);
-    expect(result.moved).toEqual([{ id: 'c', line: 16 }]);
+  it('删除区间覆盖到的书签保持原行号，不按代码块摘掉', () => {
+    expect(applyLineEdits(lines, [remove(8, 12)])).toEqual([{ id: 'c', line: 16 }]);
   });
 
   it('只改写书签所在行本身时保留书签', () => {
-    const result = applyLineEdits(lines, [{ startLine: 10, endLineExclusive: 11, insertedLineCount: 1 }]);
+    expect(applyLineEdits(lines, [{ startLine: 10, endLineExclusive: 11, insertedLineCount: 1 }])).toEqual([]);
+  });
 
-    expect(result.removed).toEqual([]);
+  it('行数不变的改写不移动任何书签', () => {
+    expect(applyLineEdits(lines, [{ startLine: 0, endLineExclusive: 3, insertedLineCount: 3 }])).toEqual([]);
   });
 
   it('多个编辑按位置从后往前处理，坐标互不污染', () => {
     // 两个变更的坐标都相对同一份编辑前的文档；若从前往后处理，第二个变更会用到已失效的行号。
-    const result = applyLineEdits(lines, [insert(0, 2), insert(15, 4)]);
-
-    expect(result.moved).toEqual([
+    expect(applyLineEdits(lines, [insert(0, 2), insert(15, 4)])).toEqual([
       { id: 'a', line: 7 },
       { id: 'b', line: 12 },
       { id: 'c', line: 26 },
@@ -65,9 +55,7 @@ describe('行号跟踪', () => {
   });
 
   it('行号不会被推成负数', () => {
-    const result = applyLineEdits([{ id: 'a', line: 1 }], [remove(0, 10)]);
-
-    expect(result.removed).toEqual(['a']);
+    expect(applyLineEdits([{ id: 'a', line: 12 }], [remove(0, 10)])).toEqual([{ id: 'a', line: 2 }]);
   });
 });
 

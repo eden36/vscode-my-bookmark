@@ -11,7 +11,7 @@ export type BookmarkLocation =
   | { kind: 'workspace'; folderName: string; relativePath: string }
   | { kind: 'external'; fsPath: string };
 
-/** 可选的书签颜色。存的是调色板 id 而不是十六进制值——树节点的着色只接受已注册的主题色 id。 */
+/** 可选的书签颜色。存的是调色板 id 而不是十六进制值。 */
 export const BOOKMARK_COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray'] as const;
 export type BookmarkColor = (typeof BOOKMARK_COLORS)[number];
 

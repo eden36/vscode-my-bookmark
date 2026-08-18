@@ -1,0 +1,1193 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Pi home" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic "Primary navigation" [ref=e8]:
+        - link "Home" [ref=e9] [cursor=pointer]:
+          - /url: /
+        - link "Documentation" [ref=e10] [cursor=pointer]:
+          - /url: /docs/latest
+        - link "News" [ref=e11] [cursor=pointer]:
+          - /url: /news
+        - link "Packages" [ref=e12] [cursor=pointer]:
+          - /url: /packages
+        - link "Models" [ref=e13] [cursor=pointer]:
+          - /url: /models
+  - generic [ref=e14]:
+    - main [ref=e15]:
+      - generic [ref=e16]:
+        - heading "Package Catalog" [level=1] [ref=e17]
+        - paragraph [ref=e18]:
+          - text: Extensions, skills, prompt templates, and themes published to npm. Install with
+          - code [ref=e19]: pi install npm:<package>
+          - text: . See the
+          - link "package docs" [ref=e20] [cursor=pointer]:
+            - /url: https://github.com/earendil-works/pi/tree/main/packages/coding-agent/docs/packages.md
+          - text: for details.
+      - generic [ref=e21]:
+        - heading "Recently published" [level=2] [ref=e23]
+        - generic [ref=e25]:
+          - 'link "@piagent/platform Guardrails for AI coding agents: blocks secret reads, destructive commands, and unapproved MCP servers before the tool call runs. Ships project profiles, capability locks, a context engine, and task verification. 12m ago" [ref=e26] [cursor=pointer]':
+            - /url: /packages/@piagent/platform
+            - strong [ref=e27]: "@piagent/platform"
+            - generic [ref=e28]: "Guardrails for AI coding agents: blocks secret reads, destructive commands, and unapproved MCP servers before the tool call runs. Ships project profiles, capability locks, a context engine, and task verification."
+            - generic [ref=e29]: 12m ago
+          - link "pi-bob Pi provider extension for IBM Bob / IBM-approved compatible model endpoints. 12m ago" [ref=e30] [cursor=pointer]:
+            - /url: /packages/pi-bob
+            - strong [ref=e31]: pi-bob
+            - generic [ref=e32]: Pi provider extension for IBM Bob / IBM-approved compatible model endpoints.
+            - generic [ref=e33]: 12m ago
+          - 'link "@hank-warren/pi-auto-permissions Fork of @ogulcancelik/pi-auto-permissions with dialog-answer user evidence: context-aware Bash permissions for Pi with automated guardian review. 16m ago" [ref=e34] [cursor=pointer]':
+            - /url: /packages/@hank-warren/pi-auto-permissions
+            - strong [ref=e35]: "@hank-warren/pi-auto-permissions"
+            - generic [ref=e36]: "Fork of @ogulcancelik/pi-auto-permissions with dialog-answer user evidence: context-aware Bash permissions for Pi with automated guardian review."
+            - generic [ref=e37]: 16m ago
+          - link "@hank-warren/pi-statusline Compact Pi footer statusline with Git/worktree context, token usage, and neon celebrations for exceptional prompt-cache hits. 21m ago" [ref=e38] [cursor=pointer]:
+            - /url: /packages/@hank-warren/pi-statusline
+            - strong [ref=e39]: "@hank-warren/pi-statusline"
+            - generic [ref=e40]: Compact Pi footer statusline with Git/worktree context, token usage, and neon celebrations for exceptional prompt-cache hits.
+            - generic [ref=e41]: 21m ago
+          - link "pi-cc-extensions A Pi productivity suite with Claude Code-style UI, context inspection, and agent/session references 23m ago" [ref=e42] [cursor=pointer]:
+            - /url: /packages/pi-cc-extensions
+            - strong [ref=e43]: pi-cc-extensions
+            - generic [ref=e44]: A Pi productivity suite with Claude Code-style UI, context inspection, and agent/session references
+            - generic [ref=e45]: 23m ago
+          - link "@remnic/plugin-pi Remnic memory extension for Pi Coding Agent 25m ago" [ref=e46] [cursor=pointer]:
+            - /url: /packages/@remnic/plugin-pi
+            - strong [ref=e47]: "@remnic/plugin-pi"
+            - generic [ref=e48]: Remnic memory extension for Pi Coding Agent
+            - generic [ref=e49]: 25m ago
+          - link "@tenchi4u/pi-bifrost Query-aware model routing extension for Pi. Select models by task complexity, cost, context, speed, or configured order. 27m ago" [ref=e50] [cursor=pointer]:
+            - /url: /packages/@tenchi4u/pi-bifrost
+            - strong [ref=e51]: "@tenchi4u/pi-bifrost"
+            - generic [ref=e52]: Query-aware model routing extension for Pi. Select models by task complexity, cost, context, speed, or configured order.
+            - generic [ref=e53]: 27m ago
+          - link "pi-honcho Durable, privacy-aware memory for Pi, powered by Honcho. 27m ago" [ref=e54] [cursor=pointer]:
+            - /url: /packages/pi-honcho
+            - strong [ref=e55]: pi-honcho
+            - generic [ref=e56]: Durable, privacy-aware memory for Pi, powered by Honcho.
+            - generic [ref=e57]: 27m ago
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - heading "All packages" [level=2] [ref=e60]
+          - generic [ref=e61]: 1-50 / 5416
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - generic [ref=e64]:
+              - generic [ref=e65]: Filter packages by name, description, or author
+              - searchbox "Filter packages by name, description, or author" [ref=e66]
+            - generic [ref=e67]:
+              - generic [ref=e68]: Filter by package type
+              - combobox "Filter by package type" [ref=e70]:
+                - option "All types" [selected]
+                - option "extension"
+                - option "skill"
+                - option "theme"
+                - option "prompt"
+            - generic [ref=e71]:
+              - generic [ref=e72]: Sort packages
+              - combobox "Sort packages" [ref=e74]:
+                - option "Most downloads" [selected]
+                - option "Recently published"
+                - option "A-Z"
+            - generic [ref=e75]:
+              - button "[ Search ]" [ref=e76] [cursor=pointer]
+              - link "[ Reset ]" [ref=e77] [cursor=pointer]:
+                - /url: /packages
+          - generic [ref=e78]:
+            - article [ref=e79]:
+              - generic [ref=e85]:
+                - heading [level=3] [ref=e86]:
+                  - link "pi-mcp-adapter" [ref=e87] [cursor=pointer]:
+                    - /url: /packages/pi-mcp-adapter
+                - paragraph [ref=e88]: MCP (Model Context Protocol) adapter extension for Pi coding agent
+                - generic [ref=e89]:
+                  - generic [ref=e90]: nicopreme
+                  - generic [ref=e91]: 454.5K/mo
+                  - generic [ref=e92]: 3d ago
+                - generic [ref=e93]: extension
+                - generic "Links for pi-mcp-adapter" [ref=e95]:
+                  - link "npm" [ref=e96] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-mcp-adapter
+                  - link "repo" [ref=e99] [cursor=pointer]:
+                    - /url: https://github.com/nicobailon/pi-mcp-adapter
+                  - link "report" [ref=e102] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-mcp-adapter&package-name=pi-mcp-adapter&package-version=2.26.0
+                - generic [ref=e105]:
+                  - code [ref=e106]: $ pi install npm:pi-mcp-adapter
+                  - button "[ Copy ]" [ref=e107] [cursor=pointer]
+            - article [ref=e108]:
+              - generic [ref=e114]:
+                - heading [level=3] [ref=e115]:
+                  - link "pi-web-access" [ref=e116] [cursor=pointer]:
+                    - /url: /packages/pi-web-access
+                - paragraph [ref=e117]: Web search, URL fetching, GitHub repo cloning, PDF extraction, YouTube video understanding, and local video analysis for Pi coding agent. Supports OpenAI, Brave, Parallel, TinyFish, Search1API, Searchinfinity, Querit, Tavily, Firecrawl, Jina, SERPdive, Ka
+                - generic [ref=e118]:
+                  - generic [ref=e119]: nicopreme
+                  - generic [ref=e120]: 258K/mo
+                  - generic [ref=e121]: 3d ago
+                - generic [ref=e122]: extension
+                - generic "Links for pi-web-access" [ref=e124]:
+                  - link "npm" [ref=e125] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-web-access
+                  - link "repo" [ref=e128] [cursor=pointer]:
+                    - /url: https://github.com/nicobailon/pi-web-access
+                  - link "report" [ref=e131] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-web-access&package-name=pi-web-access&package-version=0.23.0
+                - generic [ref=e134]:
+                  - code [ref=e135]: $ pi install npm:pi-web-access
+                  - button "[ Copy ]" [ref=e136] [cursor=pointer]
+            - article [ref=e137]:
+              - generic [ref=e143]:
+                - heading [level=3] [ref=e144]:
+                  - link "pi-subagents" [ref=e145] [cursor=pointer]:
+                    - /url: /packages/pi-subagents
+                - paragraph [ref=e146]: Pi extension for single-agent delegation and scripted multi-agent workflows
+                - generic [ref=e147]:
+                  - generic [ref=e148]: nicopreme
+                  - generic [ref=e149]: 244.8K/mo
+                  - generic [ref=e150]: 3d ago
+                - generic [ref=e151]: package
+                - generic "Links for pi-subagents" [ref=e153]:
+                  - link "npm" [ref=e154] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-subagents
+                  - link "repo" [ref=e157] [cursor=pointer]:
+                    - /url: https://github.com/nicobailon/pi-subagents
+                  - link "report" [ref=e160] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-subagents&package-name=pi-subagents&package-version=0.50.0
+                - generic [ref=e163]:
+                  - code [ref=e164]: $ pi install npm:pi-subagents
+                  - button "[ Copy ]" [ref=e165] [cursor=pointer]
+            - article [ref=e166]:
+              - generic [ref=e172]:
+                - heading [level=3] [ref=e173]:
+                  - link "@vigolium/piolium" [ref=e174] [cursor=pointer]:
+                    - /url: /packages/@vigolium/piolium
+                - paragraph [ref=e175]: Multi-phase security audits with specialist sub-agents, isolated context windows, capped concurrency, and resumable state — packaged as a Pi extension.
+                - generic [ref=e176]:
+                  - generic [ref=e177]: j3ssie
+                  - generic [ref=e178]: 231.2K/mo
+                  - generic [ref=e179]: 27d ago
+                - generic [ref=e180]: extension
+                - generic "Links for @vigolium/piolium" [ref=e182]:
+                  - link "npm" [ref=e183] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@vigolium/piolium
+                  - link "repo" [ref=e186] [cursor=pointer]:
+                    - /url: https://github.com/vigolium/piolium
+                  - link "report" [ref=e189] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40vigolium%2Fpiolium&package-name=%40vigolium%2Fpiolium&package-version=0.0.13
+                - generic [ref=e192]:
+                  - code [ref=e193]: $ pi install npm:@vigolium/piolium
+                  - button "[ Copy ]" [ref=e194] [cursor=pointer]
+            - article [ref=e195]:
+              - generic [ref=e201]:
+                - heading [level=3] [ref=e202]:
+                  - link "context-mode" [ref=e203] [cursor=pointer]:
+                    - /url: /packages/context-mode
+                - paragraph [ref=e204]: MCP plugin that saves 98% of your context window. Works with Claude Code, Gemini CLI, VS Code Copilot, OpenCode, and Codex CLI. Sandboxed code execution, FTS5 knowledge base, and intent-driven search.
+                - generic [ref=e205]:
+                  - generic [ref=e206]: mksglu
+                  - generic [ref=e207]: 77.8K/mo
+                  - generic [ref=e208]: 1mo ago
+                - generic [ref=e209]: package
+                - generic "Links for context-mode" [ref=e211]:
+                  - link "npm" [ref=e212] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/context-mode
+                  - link "repo" [ref=e215] [cursor=pointer]:
+                    - /url: https://github.com/mksglu/context-mode
+                  - link "report" [ref=e218] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+context-mode&package-name=context-mode&package-version=1.0.169
+                - generic [ref=e221]:
+                  - code [ref=e222]: $ pi install npm:context-mode
+                  - button "[ Copy ]" [ref=e223] [cursor=pointer]
+            - article [ref=e224]:
+              - generic [ref=e230]:
+                - heading [level=3] [ref=e231]:
+                  - link "@juicesharp/rpiv-ask-user-question" [ref=e232] [cursor=pointer]:
+                    - /url: /packages/@juicesharp/rpiv-ask-user-question
+                - paragraph [ref=e233]: Pi extension. A structured questionnaire the model can put to you when it would otherwise guess, with typed options instead of free-form replies.
+                - generic [ref=e234]:
+                  - generic [ref=e235]: juicesharp
+                  - generic [ref=e236]: 59.6K/mo
+                  - generic [ref=e237]: 15h ago
+                - generic [ref=e238]: extension
+                - generic "Links for @juicesharp/rpiv-ask-user-question" [ref=e240]:
+                  - link "npm" [ref=e241] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@juicesharp/rpiv-ask-user-question
+                  - link "repo" [ref=e244] [cursor=pointer]:
+                    - /url: https://github.com/juicesharp/rpiv-mono
+                  - link "report" [ref=e247] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40juicesharp%2Frpiv-ask-user-question&package-name=%40juicesharp%2Frpiv-ask-user-question&package-version=2.6.1
+                - generic [ref=e250]:
+                  - code [ref=e251]: $ pi install npm:@juicesharp/rpiv-ask-user-question
+                  - button "[ Copy ]" [ref=e252] [cursor=pointer]
+            - article [ref=e253]:
+              - generic [ref=e259]:
+                - heading [level=3] [ref=e260]:
+                  - link "@juicesharp/rpiv-todo" [ref=e261] [cursor=pointer]:
+                    - /url: /packages/@juicesharp/rpiv-todo
+                - paragraph [ref=e262]: Pi extension. A todo list for the model, rendered as a live overlay that survives /reload and conversation compaction.
+                - generic [ref=e263]:
+                  - generic [ref=e264]: juicesharp
+                  - generic [ref=e265]: 46.7K/mo
+                  - generic [ref=e266]: 15h ago
+                - generic [ref=e267]: extension
+                - generic "Links for @juicesharp/rpiv-todo" [ref=e269]:
+                  - link "npm" [ref=e270] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@juicesharp/rpiv-todo
+                  - link "repo" [ref=e273] [cursor=pointer]:
+                    - /url: https://github.com/juicesharp/rpiv-mono
+                  - link "report" [ref=e276] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40juicesharp%2Frpiv-todo&package-name=%40juicesharp%2Frpiv-todo&package-version=2.6.1
+                - generic [ref=e279]:
+                  - code [ref=e280]: $ pi install npm:@juicesharp/rpiv-todo
+                  - button "[ Copy ]" [ref=e281] [cursor=pointer]
+            - article [ref=e282]:
+              - generic [ref=e288]:
+                - heading [level=3] [ref=e289]:
+                  - link "@dietrichgebert/ponytail" [ref=e290] [cursor=pointer]:
+                    - /url: /packages/@dietrichgebert/ponytail
+                - paragraph [ref=e291]: Lazy senior dev mode for AI agents. The best code is the code you never wrote.
+                - generic [ref=e292]:
+                  - generic [ref=e293]: dietrichgebert
+                  - generic [ref=e294]: 43.3K/mo
+                  - generic [ref=e295]: 10d ago
+                - generic [ref=e296]: skill
+                - generic "Links for @dietrichgebert/ponytail" [ref=e298]:
+                  - link "npm" [ref=e299] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@dietrichgebert/ponytail
+                  - link "repo" [ref=e302] [cursor=pointer]:
+                    - /url: https://github.com/DietrichGebert/ponytail
+                  - link "report" [ref=e305] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40dietrichgebert%2Fponytail&package-name=%40dietrichgebert%2Fponytail&package-version=4.9.0
+                - generic [ref=e308]:
+                  - code [ref=e309]: $ pi install npm:@dietrichgebert/ponytail
+                  - button "[ Copy ]" [ref=e310] [cursor=pointer]
+            - article [ref=e311]:
+              - generic [ref=e317]:
+                - heading [level=3] [ref=e318]:
+                  - link "@plannotator/pi-extension" [ref=e319] [cursor=pointer]:
+                    - /url: /packages/@plannotator/pi-extension
+                - paragraph [ref=e320]: Plannotator Pi extension - interactive plan review with annotations, annotate agent messages, and review code/PRs
+                - generic [ref=e321]:
+                  - generic [ref=e322]: backnotprop
+                  - generic [ref=e323]: 43.1K/mo
+                  - generic [ref=e324]: 9h ago
+                - generic [ref=e325]: package
+                - generic "Links for @plannotator/pi-extension" [ref=e327]:
+                  - link "npm" [ref=e328] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@plannotator/pi-extension
+                  - link "repo" [ref=e331] [cursor=pointer]:
+                    - /url: https://github.com/backnotprop/plannotator
+                  - link "report" [ref=e334] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40plannotator%2Fpi-extension&package-name=%40plannotator%2Fpi-extension&package-version=0.27.4
+                - generic [ref=e337]:
+                  - code [ref=e338]: $ pi install npm:@plannotator/pi-extension
+                  - button "[ Copy ]" [ref=e339] [cursor=pointer]
+            - article [ref=e340]:
+              - generic [ref=e346]:
+                - heading [level=3] [ref=e347]:
+                  - link "@tintinweb/pi-subagents" [ref=e348] [cursor=pointer]:
+                    - /url: /packages/@tintinweb/pi-subagents
+                - paragraph [ref=e349]: A pi extension extension that brings smart Claude Code-style autonomous sub-agents to pi.
+                - generic [ref=e350]:
+                  - generic [ref=e351]: tintinweb
+                  - generic [ref=e352]: 40.4K/mo
+                  - generic [ref=e353]: 3d ago
+                - generic [ref=e354]: extension
+                - generic "Links for @tintinweb/pi-subagents" [ref=e356]:
+                  - link "npm" [ref=e357] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@tintinweb/pi-subagents
+                  - link "repo" [ref=e360] [cursor=pointer]:
+                    - /url: https://github.com/tintinweb/pi-subagents
+                  - link "report" [ref=e363] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40tintinweb%2Fpi-subagents&package-name=%40tintinweb%2Fpi-subagents&package-version=0.16.1
+                - generic [ref=e366]:
+                  - code [ref=e367]: $ pi install npm:@tintinweb/pi-subagents
+                  - button "[ Copy ]" [ref=e368] [cursor=pointer]
+            - article [ref=e369]:
+              - generic [ref=e375]:
+                - heading [level=3] [ref=e376]:
+                  - link "pi-lens" [ref=e377] [cursor=pointer]:
+                    - /url: /packages/pi-lens
+                - paragraph [ref=e378]: Real-time code feedback for pi — LSP, linters, formatters, type-checking, structural analysis & booboo
+                - generic [ref=e379]:
+                  - generic [ref=e380]: apmantza
+                  - generic [ref=e381]: 38K/mo
+                  - generic [ref=e382]: 1d ago
+                - generic [ref=e383]: extension
+                - generic "Links for pi-lens" [ref=e385]:
+                  - link "npm" [ref=e386] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-lens
+                  - link "repo" [ref=e389] [cursor=pointer]:
+                    - /url: https://github.com/apmantza/pi-lens
+                  - link "report" [ref=e392] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-lens&package-name=pi-lens&package-version=4.0.1
+                - generic [ref=e395]:
+                  - code [ref=e396]: $ pi install npm:pi-lens
+                  - button "[ Copy ]" [ref=e397] [cursor=pointer]
+            - article [ref=e398]:
+              - generic [ref=e404]:
+                - heading [level=3] [ref=e405]:
+                  - link "@7n/rules" [ref=e406] [cursor=pointer]:
+                    - /url: /packages/@7n/rules
+                - paragraph [ref=e407]: "CLI еталонних правил і skills (префікс n-): синк у репозиторій, дельта-lint, конформність"
+                - generic [ref=e408]:
+                  - generic [ref=e409]: vitaliytv
+                  - generic [ref=e410]: 37.6K/mo
+                  - generic [ref=e411]: 5d ago
+                - generic [ref=e412]: package
+                - generic "Links for @7n/rules" [ref=e414]:
+                  - link "npm" [ref=e415] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@7n/rules
+                  - link "repo" [ref=e418] [cursor=pointer]:
+                    - /url: https://github.com/nitra/7n-rules
+                  - link "report" [ref=e421] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%407n%2Frules&package-name=%407n%2Frules&package-version=1.92.0
+                - generic [ref=e424]:
+                  - code [ref=e425]: $ pi install npm:@7n/rules
+                  - button "[ Copy ]" [ref=e426] [cursor=pointer]
+            - article [ref=e427]:
+              - generic [ref=e433]:
+                - heading [level=3] [ref=e434]:
+                  - link "@narumitw/pi-goal" [ref=e435] [cursor=pointer]:
+                    - /url: /packages/@narumitw/pi-goal
+                - paragraph [ref=e436]: Pi extension for autonomous /goal completion with opt-in experimental ordered queues.
+                - generic [ref=e437]:
+                  - generic [ref=e438]: narumitw
+                  - generic [ref=e439]: 34.1K/mo
+                  - generic [ref=e440]: 6d ago
+                - generic [ref=e441]: extension
+                - generic "Links for @narumitw/pi-goal" [ref=e443]:
+                  - link "npm" [ref=e444] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@narumitw/pi-goal
+                  - link "repo" [ref=e447] [cursor=pointer]:
+                    - /url: https://github.com/narumiruna/pi-extensions
+                  - link "report" [ref=e450] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40narumitw%2Fpi-goal&package-name=%40narumitw%2Fpi-goal&package-version=0.51.0
+                - generic [ref=e453]:
+                  - code [ref=e454]: $ pi install npm:@narumitw/pi-goal
+                  - button "[ Copy ]" [ref=e455] [cursor=pointer]
+            - article [ref=e456]:
+              - generic [ref=e462]:
+                - heading [level=3] [ref=e463]:
+                  - link "@tangle-network/tcloud-agent" [ref=e464] [cursor=pointer]:
+                    - /url: /packages/@tangle-network/tcloud-agent
+                - paragraph [ref=e465]: Agent run-loop primitive over Tangle sandbox transports — runs an AgentProfile against a brief with criterion gates, budget caps, and streaming events. Includes TangleToolProvider for Pi tool integration.
+                - generic [ref=e466]:
+                  - generic [ref=e467]: vutuanlinh2k2
+                  - generic [ref=e468]: 33.8K/mo
+                  - generic [ref=e469]: 1mo ago
+                - generic [ref=e470]: package
+                - generic "Links for @tangle-network/tcloud-agent" [ref=e472]:
+                  - link "npm" [ref=e473] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@tangle-network/tcloud-agent
+                  - link "repo" [ref=e476] [cursor=pointer]:
+                    - /url: https://github.com/tangle-network/tcloud
+                  - link "report" [ref=e479] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40tangle-network%2Ftcloud-agent&package-name=%40tangle-network%2Ftcloud-agent&package-version=0.3.3
+                - generic [ref=e482]:
+                  - code [ref=e483]: $ pi install npm:@tangle-network/tcloud-agent
+                  - button "[ Copy ]" [ref=e484] [cursor=pointer]
+            - article [ref=e485]:
+              - generic [ref=e491]:
+                - heading [level=3] [ref=e492]:
+                  - link "pi-fabric" [ref=e493] [cursor=pointer]:
+                    - /url: /packages/pi-fabric
+                - paragraph [ref=e494]: A programmable tool and agent runtime for Pi
+                - generic [ref=e495]:
+                  - generic [ref=e496]: monotykamary
+                  - generic [ref=e497]: 33K/mo
+                  - generic [ref=e498]: 19h ago
+                - generic [ref=e499]: extension
+                - generic "Links for pi-fabric" [ref=e501]:
+                  - link "npm" [ref=e502] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-fabric
+                  - link "repo" [ref=e505] [cursor=pointer]:
+                    - /url: https://github.com/monotykamary/pi-fabric
+                  - link "report" [ref=e508] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-fabric&package-name=pi-fabric&package-version=0.61.2
+                - generic [ref=e511]:
+                  - code [ref=e512]: $ pi install npm:pi-fabric
+                  - button "[ Copy ]" [ref=e513] [cursor=pointer]
+            - article [ref=e514]:
+              - generic [ref=e520]:
+                - heading [level=3] [ref=e521]:
+                  - link "@ff-labs/pi-fff" [ref=e522] [cursor=pointer]:
+                    - /url: /packages/@ff-labs/pi-fff
+                - paragraph [ref=e523]: "pi extension: FFF-powered fuzzy file and content search"
+                - generic [ref=e524]:
+                  - generic [ref=e525]: dmtr.kovalenko
+                  - generic [ref=e526]: 32.7K/mo
+                  - generic [ref=e527]: 1d ago
+                - generic [ref=e528]: extension
+                - generic "Links for @ff-labs/pi-fff" [ref=e530]:
+                  - link "npm" [ref=e531] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@ff-labs/pi-fff
+                  - link "repo" [ref=e534] [cursor=pointer]:
+                    - /url: https://github.com/dmtrKovalenko/fff
+                  - link "report" [ref=e537] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40ff-labs%2Fpi-fff&package-name=%40ff-labs%2Fpi-fff&package-version=0.10.5
+                - generic [ref=e540]:
+                  - code [ref=e541]: $ pi install npm:@ff-labs/pi-fff
+                  - button "[ Copy ]" [ref=e542] [cursor=pointer]
+            - article [ref=e543]:
+              - generic [ref=e549]:
+                - heading [level=3] [ref=e550]:
+                  - link "pi-goal-list-loop-audit" [ref=e551] [cursor=pointer]:
+                    - /url: /packages/pi-goal-list-loop-audit
+                - paragraph [ref=e552]: "Mission control for autonomous pi: interview-drafted goals, an audited task queue, and forever-loops (metric, spec, project-audit) that run for hours. A detached extension-less auditor process re-verifies every completion with raw evidence without holding"
+                - generic [ref=e553]:
+                  - generic [ref=e554]: dracond
+                  - generic [ref=e555]: 31.8K/mo
+                  - generic [ref=e556]: 1d ago
+                - generic [ref=e557]: extension
+                - generic "Links for pi-goal-list-loop-audit" [ref=e559]:
+                  - link "npm" [ref=e560] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-goal-list-loop-audit
+                  - link "repo" [ref=e563] [cursor=pointer]:
+                    - /url: https://github.com/DraconDev/pi-goal-list-loop-audit
+                  - link "report" [ref=e566] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-goal-list-loop-audit&package-name=pi-goal-list-loop-audit&package-version=0.35.4
+                - generic [ref=e569]:
+                  - code [ref=e570]: $ pi install npm:pi-goal-list-loop-audit
+                  - button "[ Copy ]" [ref=e571] [cursor=pointer]
+            - article [ref=e572]:
+              - generic [ref=e578]:
+                - heading [level=3] [ref=e579]:
+                  - link "pi-simplify" [ref=e580] [cursor=pointer]:
+                    - /url: /packages/pi-simplify
+                - paragraph [ref=e581]: A Pi extension that reviews recently changed code for clarity, consistency, and maintainability.
+                - generic [ref=e582]:
+                  - generic [ref=e583]: mdevy
+                  - generic [ref=e584]: 30.8K/mo
+                  - generic [ref=e585]: 1mo ago
+                - generic [ref=e586]: extension
+                - generic "Links for pi-simplify" [ref=e588]:
+                  - link "npm" [ref=e589] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-simplify
+                  - link "repo" [ref=e592] [cursor=pointer]:
+                    - /url: https://github.com/MattDevy/pi-extensions
+                  - link "report" [ref=e595] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-simplify&package-name=pi-simplify&package-version=0.2.3
+                - generic [ref=e598]:
+                  - code [ref=e599]: $ pi install npm:pi-simplify
+                  - button "[ Copy ]" [ref=e600] [cursor=pointer]
+            - article [ref=e601]:
+              - generic [ref=e607]:
+                - heading [level=3] [ref=e608]:
+                  - link "pi-memory" [ref=e609] [cursor=pointer]:
+                    - /url: /packages/pi-memory
+                - paragraph [ref=e610]: Pi coding agent extension for memory with qmd-powered semantic search across daily logs, long-term memory, and scratchpad
+                - generic [ref=e611]:
+                  - generic [ref=e612]: jayzeng
+                  - generic [ref=e613]: 28.9K/mo
+                  - generic [ref=e614]: 6d ago
+                - generic [ref=e615]: package
+                - generic "Links for pi-memory" [ref=e617]:
+                  - link "npm" [ref=e618] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-memory
+                  - link "repo" [ref=e621] [cursor=pointer]:
+                    - /url: https://github.com/jayzeng/pi-memory
+                  - link "report" [ref=e624] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-memory&package-name=pi-memory&package-version=0.4.2
+                - generic [ref=e627]:
+                  - code [ref=e628]: $ pi install npm:pi-memory
+                  - button "[ Copy ]" [ref=e629] [cursor=pointer]
+            - article [ref=e630]:
+              - generic [ref=e636]:
+                - heading [level=3] [ref=e637]:
+                  - link "@quintinshaw/pi-dynamic-workflows" [ref=e638] [cursor=pointer]:
+                    - /url: /packages/@quintinshaw/pi-dynamic-workflows
+                - paragraph [ref=e639]: Claude-Code-style dynamic workflows for Pi — fan a task out across 100s of subagents with real model routing, token/cost accounting, resume, git-worktree isolation, an interactive /workflows TUI, and a real /deep-research.
+                - generic [ref=e640]:
+                  - generic [ref=e641]: quintinshaw
+                  - generic [ref=e642]: 27.8K/mo
+                  - generic [ref=e643]: 1d ago
+                - generic [ref=e644]: package
+                - generic "Links for @quintinshaw/pi-dynamic-workflows" [ref=e646]:
+                  - link "npm" [ref=e647] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@quintinshaw/pi-dynamic-workflows
+                  - link "repo" [ref=e650] [cursor=pointer]:
+                    - /url: https://github.com/QuintinShaw/pi-dynamic-workflows
+                  - link "report" [ref=e653] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40quintinshaw%2Fpi-dynamic-workflows&package-name=%40quintinshaw%2Fpi-dynamic-workflows&package-version=3.6.0
+                - generic [ref=e656]:
+                  - code [ref=e657]: $ pi install npm:@quintinshaw/pi-dynamic-workflows
+                  - button "[ Copy ]" [ref=e658] [cursor=pointer]
+            - article [ref=e659]:
+              - generic [ref=e665]:
+                - heading [level=3] [ref=e666]:
+                  - link "pi-background-tasks" [ref=e667] [cursor=pointer]:
+                    - /url: /packages/pi-background-tasks
+                - paragraph [ref=e668]: Pi extension for durable background shell tasks, read-only delegated agents, local attested Pi runs, and fixed-purpose Fusion workflows through child Pi processes.
+                - generic [ref=e669]:
+                  - generic [ref=e670]: ismailsaleekh
+                  - generic [ref=e671]: 26.9K/mo
+                  - generic [ref=e672]: 4d ago
+                - generic [ref=e673]: extension
+                - generic "Links for pi-background-tasks" [ref=e675]:
+                  - link "npm" [ref=e676] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-background-tasks
+                  - link "repo" [ref=e679] [cursor=pointer]:
+                    - /url: https://github.com/ismailsaleekh/pi-background-tasks
+                  - link "report" [ref=e682] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-background-tasks&package-name=pi-background-tasks&package-version=2.4.2
+                - generic [ref=e685]:
+                  - code [ref=e686]: $ pi install npm:pi-background-tasks
+                  - button "[ Copy ]" [ref=e687] [cursor=pointer]
+            - article [ref=e688]:
+              - generic [ref=e694]:
+                - heading [level=3] [ref=e695]:
+                  - link "@gotgenes/pi-permission-system" [ref=e696] [cursor=pointer]:
+                    - /url: /packages/@gotgenes/pi-permission-system
+                - paragraph [ref=e697]: Permission enforcement extension for the Pi coding agent.
+                - generic [ref=e698]:
+                  - generic [ref=e699]: gotgenes
+                  - generic [ref=e700]: 26.4K/mo
+                  - generic [ref=e701]: 11h ago
+                - generic [ref=e702]: extension
+                - generic "Links for @gotgenes/pi-permission-system" [ref=e704]:
+                  - link "npm" [ref=e705] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@gotgenes/pi-permission-system
+                  - link "repo" [ref=e708] [cursor=pointer]:
+                    - /url: https://github.com/gotgenes/pi-packages
+                  - link "report" [ref=e711] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40gotgenes%2Fpi-permission-system&package-name=%40gotgenes%2Fpi-permission-system&package-version=26.2.1
+                - generic [ref=e714]:
+                  - code [ref=e715]: $ pi install npm:@gotgenes/pi-permission-system
+                  - button "[ Copy ]" [ref=e716] [cursor=pointer]
+            - article [ref=e717]:
+              - generic [ref=e723]:
+                - heading [level=3] [ref=e724]:
+                  - link "@remnic/plugin-pi" [ref=e725] [cursor=pointer]:
+                    - /url: /packages/@remnic/plugin-pi
+                - paragraph [ref=e726]: Remnic memory extension for Pi Coding Agent
+                - generic [ref=e727]:
+                  - generic [ref=e728]: joshuaswarren
+                  - generic [ref=e729]: 25.5K/mo
+                  - generic [ref=e730]: 25m ago
+                - generic [ref=e731]: package
+                - generic "Links for @remnic/plugin-pi" [ref=e733]:
+                  - link "npm" [ref=e734] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@remnic/plugin-pi
+                  - link "repo" [ref=e737] [cursor=pointer]:
+                    - /url: https://github.com/joshuaswarren/remnic
+                  - link "report" [ref=e740] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40remnic%2Fplugin-pi&package-name=%40remnic%2Fplugin-pi&package-version=9.63.10
+                - generic [ref=e743]:
+                  - code [ref=e744]: $ pi install npm:@remnic/plugin-pi
+                  - button "[ Copy ]" [ref=e745] [cursor=pointer]
+            - article [ref=e746]:
+              - generic [ref=e752]:
+                - heading [level=3] [ref=e753]:
+                  - link "@raindrop-ai/pi-agent" [ref=e754] [cursor=pointer]:
+                    - /url: /packages/@raindrop-ai/pi-agent
+                - paragraph [ref=e755]: Raindrop observability for Pi Agent — automatic tracing via subscriber or pi-coding-agent extension
+                - generic [ref=e756]:
+                  - generic [ref=e757]: rsd-raindrop
+                  - generic [ref=e758]: 25.4K/mo
+                  - generic [ref=e759]: 17d ago
+                - generic [ref=e760]: package
+                - generic "Links for @raindrop-ai/pi-agent" [ref=e762]:
+                  - link "npm" [ref=e763] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@raindrop-ai/pi-agent
+                  - link "repo" [ref=e766] [cursor=pointer]:
+                    - /url: https://github.com/raindrop-ai/raindrop-js
+                  - link "report" [ref=e769] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40raindrop-ai%2Fpi-agent&package-name=%40raindrop-ai%2Fpi-agent&package-version=0.1.3
+                - generic [ref=e772]:
+                  - code [ref=e773]: $ pi install npm:@raindrop-ai/pi-agent
+                  - button "[ Copy ]" [ref=e774] [cursor=pointer]
+            - article [ref=e775]:
+              - generic [ref=e781]:
+                - heading [level=3] [ref=e782]:
+                  - link "pi-hermes-memory" [ref=e783] [cursor=pointer]:
+                    - /url: /packages/pi-hermes-memory
+                - paragraph [ref=e784]: 🧠 Persistent memory + 🔍 session search + 🛡️ secret scanning for Pi. Token-aware policy-only memory by default, SQLite FTS5 search, auto-consolidation, procedural skills. 732 tests. Ported from Hermes agent.
+                - generic [ref=e785]:
+                  - generic [ref=e786]: chandra447
+                  - generic [ref=e787]: 24.7K/mo
+                  - generic [ref=e788]: 16h ago
+                - generic [ref=e789]:
+                  - generic [ref=e790]: extension
+                  - generic [ref=e791]: skill
+                - generic "Links for pi-hermes-memory" [ref=e792]:
+                  - link "npm" [ref=e793] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-hermes-memory
+                  - link "repo" [ref=e796] [cursor=pointer]:
+                    - /url: https://github.com/chandra447/pi-hermes-memory
+                  - link "report" [ref=e799] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-hermes-memory&package-name=pi-hermes-memory&package-version=0.9.6
+                - generic [ref=e802]:
+                  - code [ref=e803]: $ pi install npm:pi-hermes-memory
+                  - button "[ Copy ]" [ref=e804] [cursor=pointer]
+            - article [ref=e805]:
+              - generic [ref=e811]:
+                - heading [level=3] [ref=e812]:
+                  - link "@mjasnikovs/pi-task" [ref=e813] [cursor=pointer]:
+                    - /url: /packages/@mjasnikovs/pi-task
+                - paragraph [ref=e814]: Deterministic task planning and spec-orchestration for local models — crash-safe /task pipelines with verify/enforce gates, a real-time remote web view, and web/docs/fetch/worker subagent tools.
+                - generic [ref=e815]:
+                  - generic [ref=e816]: mjasnikovs
+                  - generic [ref=e817]: 23.3K/mo
+                  - generic [ref=e818]: 1d ago
+                - generic [ref=e819]: extension
+                - generic "Links for @mjasnikovs/pi-task" [ref=e821]:
+                  - link "npm" [ref=e822] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@mjasnikovs/pi-task
+                  - link "repo" [ref=e825] [cursor=pointer]:
+                    - /url: https://github.com/mjasnikovs/pi-task
+                  - link "report" [ref=e828] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40mjasnikovs%2Fpi-task&package-name=%40mjasnikovs%2Fpi-task&package-version=0.38.11
+                - generic [ref=e831]:
+                  - code [ref=e832]: $ pi install npm:@mjasnikovs/pi-task
+                  - button "[ Copy ]" [ref=e833] [cursor=pointer]
+            - article [ref=e834]:
+              - generic [ref=e840]:
+                - heading [level=3] [ref=e841]:
+                  - link "@juicesharp/rpiv-voice" [ref=e842] [cursor=pointer]:
+                    - /url: /packages/@juicesharp/rpiv-voice
+                - paragraph [ref=e843]: Pi extension. Voice dictation via /voice — local on-device STT with sherpa-onnx Whisper (base multilingual int8), microphone capture via decibri.
+                - generic [ref=e844]:
+                  - generic [ref=e845]: juicesharp
+                  - generic [ref=e846]: 21.1K/mo
+                  - generic [ref=e847]: 15h ago
+                - generic [ref=e848]: extension
+                - generic "Links for @juicesharp/rpiv-voice" [ref=e850]:
+                  - link "npm" [ref=e851] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@juicesharp/rpiv-voice
+                  - link "repo" [ref=e854] [cursor=pointer]:
+                    - /url: https://github.com/juicesharp/rpiv-mono
+                  - link "report" [ref=e857] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40juicesharp%2Frpiv-voice&package-name=%40juicesharp%2Frpiv-voice&package-version=2.6.1
+                - generic [ref=e860]:
+                  - code [ref=e861]: $ pi install npm:@juicesharp/rpiv-voice
+                  - button "[ Copy ]" [ref=e862] [cursor=pointer]
+            - article [ref=e863]:
+              - generic [ref=e869]:
+                - heading [level=3] [ref=e870]:
+                  - link "@companion-ai/feynman" [ref=e871] [cursor=pointer]:
+                    - /url: /packages/@companion-ai/feynman
+                - paragraph [ref=e872]: Research-first CLI agent built on Pi and alphaXiv
+                - generic [ref=e873]:
+                  - generic [ref=e874]: advaitpaliwal
+                  - generic [ref=e875]: 20.3K/mo
+                  - generic [ref=e876]: 9h ago
+                - generic [ref=e877]: package
+                - generic "Links for @companion-ai/feynman" [ref=e879]:
+                  - link "npm" [ref=e880] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@companion-ai/feynman
+                  - link "repo" [ref=e883] [cursor=pointer]:
+                    - /url: https://github.com/companion-inc/feynman
+                  - link "report" [ref=e886] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40companion-ai%2Ffeynman&package-name=%40companion-ai%2Ffeynman&package-version=0.3.27
+                - generic [ref=e889]:
+                  - code [ref=e890]: $ pi install npm:@companion-ai/feynman
+                  - button "[ Copy ]" [ref=e891] [cursor=pointer]
+            - article [ref=e892]:
+              - generic [ref=e898]:
+                - heading [level=3] [ref=e899]:
+                  - link "pi-intercom" [ref=e900] [cursor=pointer]:
+                    - /url: /packages/pi-intercom
+                - paragraph [ref=e901]: <p> <img src="banner.png" alt="pi-intercom" width="1100"> </p>
+                - generic [ref=e902]:
+                  - generic [ref=e903]: nicopreme
+                  - generic [ref=e904]: 19.8K/mo
+                  - generic [ref=e905]: 5d ago
+                - generic [ref=e906]: package
+                - generic "Links for pi-intercom" [ref=e908]:
+                  - link "npm" [ref=e909] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-intercom
+                  - link "report" [ref=e912] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-intercom&package-name=pi-intercom&package-version=0.10.1
+                - generic [ref=e915]:
+                  - code [ref=e916]: $ pi install npm:pi-intercom
+                  - button "[ Copy ]" [ref=e917] [cursor=pointer]
+            - article [ref=e918]:
+              - generic [ref=e924]:
+                - heading [level=3] [ref=e925]:
+                  - link "@narumitw/pi-plan-mode" [ref=e926] [cursor=pointer]:
+                    - /url: /packages/@narumitw/pi-plan-mode
+                - paragraph [ref=e927]: Pi extension that adds a Codex-like read-only /plan collaboration mode.
+                - generic [ref=e928]:
+                  - generic [ref=e929]: narumitw
+                  - generic [ref=e930]: 19.2K/mo
+                  - generic [ref=e931]: 12d ago
+                - generic [ref=e932]: extension
+                - generic "Links for @narumitw/pi-plan-mode" [ref=e934]:
+                  - link "npm" [ref=e935] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@narumitw/pi-plan-mode
+                  - link "repo" [ref=e938] [cursor=pointer]:
+                    - /url: https://github.com/narumiruna/pi-extensions
+                  - link "report" [ref=e941] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40narumitw%2Fpi-plan-mode&package-name=%40narumitw%2Fpi-plan-mode&package-version=0.49.3
+                - generic [ref=e944]:
+                  - code [ref=e945]: $ pi install npm:@narumitw/pi-plan-mode
+                  - button "[ Copy ]" [ref=e946] [cursor=pointer]
+            - article [ref=e947]:
+              - generic [ref=e953]:
+                - heading [level=3] [ref=e954]:
+                  - link "pi-hashline-edit-pro" [ref=e955] [cursor=pointer]:
+                    - /url: /packages/pi-hashline-edit-pro
+                - paragraph [ref=e956]: Hash-anchored read/replace/undo tools for pi-coding-agent. Every line gets a unique 3-char hash (A-Za-z0-9) that stays stable across edits; stale or ambiguous anchors are rejected, never fuzzy-matched. Undo persists across restarts.
+                - generic [ref=e957]:
+                  - generic [ref=e958]: yugimob
+                  - generic [ref=e959]: 18K/mo
+                  - generic [ref=e960]: 4h ago
+                - generic [ref=e961]: extension
+                - generic "Links for pi-hashline-edit-pro" [ref=e963]:
+                  - link "npm" [ref=e964] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-hashline-edit-pro
+                  - link "repo" [ref=e967] [cursor=pointer]:
+                    - /url: https://github.com/YuGiMob/pi-hashline-edit-pro
+                  - link "report" [ref=e970] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-hashline-edit-pro&package-name=pi-hashline-edit-pro&package-version=2.6.1
+                - generic [ref=e973]:
+                  - code [ref=e974]: $ pi install npm:pi-hashline-edit-pro
+                  - button "[ Copy ]" [ref=e975] [cursor=pointer]
+            - article [ref=e976]:
+              - generic [ref=e982]:
+                - heading [level=3] [ref=e983]:
+                  - link "@braintrust/pi-extension" [ref=e984] [cursor=pointer]:
+                    - /url: /packages/@braintrust/pi-extension
+                - paragraph [ref=e985]: Braintrust extension for pi. Includes automatic tracing for pi sessions, turns, LLM calls, and tool executions to Braintrust.
+                - generic [ref=e986]:
+                  - generic [ref=e987]: braintrust
+                  - generic [ref=e988]: 18K/mo
+                  - generic [ref=e989]: 5d ago
+                - generic [ref=e990]: package
+                - generic "Links for @braintrust/pi-extension" [ref=e992]:
+                  - link "npm" [ref=e993] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@braintrust/pi-extension
+                  - link "repo" [ref=e996] [cursor=pointer]:
+                    - /url: https://github.com/braintrustdata/braintrust-coding-agent-plugins
+                  - link "report" [ref=e999] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40braintrust%2Fpi-extension&package-name=%40braintrust%2Fpi-extension&package-version=1.0.0
+                - generic [ref=e1002]:
+                  - code [ref=e1003]: $ pi install npm:@braintrust/pi-extension
+                  - button "[ Copy ]" [ref=e1004] [cursor=pointer]
+            - article [ref=e1005]:
+              - generic [ref=e1011]:
+                - heading [level=3] [ref=e1012]:
+                  - link "pi-powerline-footer" [ref=e1013] [cursor=pointer]:
+                    - /url: /packages/pi-powerline-footer
+                - paragraph [ref=e1014]: Powerline-style status bar extension for pi coding agent
+                - generic [ref=e1015]:
+                  - generic [ref=e1016]: nicopreme
+                  - generic [ref=e1017]: 17.5K/mo
+                  - generic [ref=e1018]: 3d ago
+                - generic [ref=e1019]: extension
+                - generic "Links for pi-powerline-footer" [ref=e1021]:
+                  - link "npm" [ref=e1022] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-powerline-footer
+                  - link "repo" [ref=e1025] [cursor=pointer]:
+                    - /url: https://github.com/nicobailon/pi-powerline-footer
+                  - link "report" [ref=e1028] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-powerline-footer&package-name=pi-powerline-footer&package-version=0.15.0
+                - generic [ref=e1031]:
+                  - code [ref=e1032]: $ pi install npm:pi-powerline-footer
+                  - button "[ Copy ]" [ref=e1033] [cursor=pointer]
+            - article [ref=e1034]:
+              - generic [ref=e1040]:
+                - heading [level=3] [ref=e1041]:
+                  - link "@nitra/cursor" [ref=e1042] [cursor=pointer]:
+                    - /url: /packages/@nitra/cursor
+                - paragraph [ref=e1043]: CLI для завантаження cursor-правил (префікс n-) у локальний репозиторій
+                - generic [ref=e1044]:
+                  - generic [ref=e1045]: vitaliytv
+                  - generic [ref=e1046]: 17.4K/mo
+                  - generic [ref=e1047]: 1mo ago
+                - generic [ref=e1048]: package
+                - generic "Links for @nitra/cursor" [ref=e1050]:
+                  - link "npm" [ref=e1051] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@nitra/cursor
+                  - link "repo" [ref=e1054] [cursor=pointer]:
+                    - /url: https://github.com/n/cursor
+                  - link "report" [ref=e1057] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40nitra%2Fcursor&package-name=%40nitra%2Fcursor&package-version=14.33.0
+                - generic [ref=e1060]:
+                  - code [ref=e1061]: $ pi install npm:@nitra/cursor
+                  - button "[ Copy ]" [ref=e1062] [cursor=pointer]
+            - article [ref=e1063]:
+              - generic [ref=e1069]:
+                - heading [level=3] [ref=e1070]:
+                  - link "@howaboua/pi-codex-conversion" [ref=e1071] [cursor=pointer]:
+                    - /url: /packages/@howaboua/pi-codex-conversion
+                - paragraph [ref=e1072]: Codex-oriented tool and prompt adapter for pi coding agent
+                - generic [ref=e1073]:
+                  - generic [ref=e1074]: howaboua
+                  - generic [ref=e1075]: 16.5K/mo
+                  - generic [ref=e1076]: 2d ago
+                - generic [ref=e1077]: extension
+                - generic "Links for @howaboua/pi-codex-conversion" [ref=e1079]:
+                  - link "npm" [ref=e1080] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@howaboua/pi-codex-conversion
+                  - link "repo" [ref=e1083] [cursor=pointer]:
+                    - /url: https://github.com/IgorWarzocha/howaboua-pi-stuff
+                  - link "report" [ref=e1086] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40howaboua%2Fpi-codex-conversion&package-name=%40howaboua%2Fpi-codex-conversion&package-version=3.0.15
+                - generic [ref=e1089]:
+                  - code [ref=e1090]: $ pi install npm:@howaboua/pi-codex-conversion
+                  - button "[ Copy ]" [ref=e1091] [cursor=pointer]
+            - article [ref=e1092]:
+              - generic [ref=e1098]:
+                - heading [level=3] [ref=e1099]:
+                  - link "@narumitw/pi-lsp" [ref=e1100] [cursor=pointer]:
+                    - /url: /packages/@narumitw/pi-lsp
+                - paragraph [ref=e1101]: Pi extension that exposes configurable, language-agnostic LSP tools through a shared runner.
+                - generic [ref=e1102]:
+                  - generic [ref=e1103]: narumitw
+                  - generic [ref=e1104]: 16.1K/mo
+                  - generic [ref=e1105]: 10d ago
+                - generic [ref=e1106]: extension
+                - generic "Links for @narumitw/pi-lsp" [ref=e1108]:
+                  - link "npm" [ref=e1109] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@narumitw/pi-lsp
+                  - link "repo" [ref=e1112] [cursor=pointer]:
+                    - /url: https://github.com/narumiruna/pi-extensions
+                  - link "report" [ref=e1115] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40narumitw%2Fpi-lsp&package-name=%40narumitw%2Fpi-lsp&package-version=0.49.4
+                - generic [ref=e1118]:
+                  - code [ref=e1119]: $ pi install npm:@narumitw/pi-lsp
+                  - button "[ Copy ]" [ref=e1120] [cursor=pointer]
+            - article [ref=e1121]:
+              - generic [ref=e1127]:
+                - heading [level=3] [ref=e1128]:
+                  - link "pi-readseek" [ref=e1129] [cursor=pointer]:
+                    - /url: /packages/pi-readseek
+                - paragraph [ref=e1130]: Pi extension for LINE:HASH-anchored file operations and structural code navigation
+                - generic [ref=e1131]:
+                  - generic [ref=e1132]: jarkkojs
+                  - generic [ref=e1133]: 16.1K/mo
+                  - generic [ref=e1134]: 6d ago
+                - generic [ref=e1135]: extension
+                - generic "Links for pi-readseek" [ref=e1137]:
+                  - link "npm" [ref=e1138] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-readseek
+                  - link "repo" [ref=e1141] [cursor=pointer]:
+                    - /url: https://gitlab.com/jarkkojs/readseek
+                  - link "report" [ref=e1144] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-readseek&package-name=pi-readseek&package-version=0.9.13
+                - generic [ref=e1147]:
+                  - code [ref=e1148]: $ pi install npm:pi-readseek
+                  - button "[ Copy ]" [ref=e1149] [cursor=pointer]
+            - article [ref=e1150]:
+              - generic [ref=e1156]:
+                - heading [level=3] [ref=e1157]:
+                  - link "bigpowers" [ref=e1158] [cursor=pointer]:
+                    - /url: /packages/bigpowers
+                - paragraph [ref=e1159]: 73 agent skills synthesizing 17 years of software engineering discipline into a prescriptive methodology for solo developers
+                - generic [ref=e1160]:
+                  - generic [ref=e1161]: danielvm
+                  - generic [ref=e1162]: 15.9K/mo
+                  - generic [ref=e1163]: 10d ago
+                - generic [ref=e1164]: skill
+                - generic "Links for bigpowers" [ref=e1166]:
+                  - link "npm" [ref=e1167] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/bigpowers
+                  - link "repo" [ref=e1170] [cursor=pointer]:
+                    - /url: https://github.com/danielvm-git/bigpowers
+                  - link "report" [ref=e1173] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+bigpowers&package-name=bigpowers&package-version=2.87.5
+                - generic [ref=e1176]:
+                  - code [ref=e1177]: $ pi install npm:bigpowers
+                  - button "[ Copy ]" [ref=e1178] [cursor=pointer]
+            - article [ref=e1179]:
+              - generic [ref=e1185]:
+                - heading [level=3] [ref=e1186]:
+                  - link "pi-agent-browser-native" [ref=e1187] [cursor=pointer]:
+                    - /url: /packages/pi-agent-browser-native
+                - paragraph [ref=e1188]: pi extension that exposes agent-browser as a native tool for browser automation
+                - generic [ref=e1189]:
+                  - generic [ref=e1190]: fitchmultz
+                  - generic [ref=e1191]: 15K/mo
+                  - generic [ref=e1192]: 11d ago
+                - generic [ref=e1193]: extension
+                - generic "Links for pi-agent-browser-native" [ref=e1195]:
+                  - link "npm" [ref=e1196] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-agent-browser-native
+                  - link "repo" [ref=e1199] [cursor=pointer]:
+                    - /url: https://github.com/fitchmultz/pi-agent-browser-native
+                  - link "report" [ref=e1202] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-agent-browser-native&package-name=pi-agent-browser-native&package-version=0.3.0
+                - generic [ref=e1205]:
+                  - code [ref=e1206]: $ pi install npm:pi-agent-browser-native
+                  - button "[ Copy ]" [ref=e1207] [cursor=pointer]
+            - article [ref=e1208]:
+              - generic [ref=e1214]:
+                - heading [level=3] [ref=e1215]:
+                  - link "@llblab/pi-telegram" [ref=e1216] [cursor=pointer]:
+                    - /url: /packages/@llblab/pi-telegram
+                - paragraph [ref=e1217]: Telegram runtime adapter for Pi
+                - generic [ref=e1218]:
+                  - generic [ref=e1219]: llblab
+                  - generic [ref=e1220]: 14.4K/mo
+                  - generic [ref=e1221]: 23h ago
+                - generic [ref=e1222]: extension
+                - generic "Links for @llblab/pi-telegram" [ref=e1224]:
+                  - link "npm" [ref=e1225] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@llblab/pi-telegram
+                  - link "repo" [ref=e1228] [cursor=pointer]:
+                    - /url: https://github.com/llblab/pi-telegram
+                  - link "report" [ref=e1231] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40llblab%2Fpi-telegram&package-name=%40llblab%2Fpi-telegram&package-version=0.35.2
+                - generic [ref=e1234]:
+                  - code [ref=e1235]: $ pi install npm:@llblab/pi-telegram
+                  - button "[ Copy ]" [ref=e1236] [cursor=pointer]
+            - article [ref=e1237]:
+              - generic [ref=e1243]:
+                - heading [level=3] [ref=e1244]:
+                  - link "@agimon-ai/log-sink-mcp" [ref=e1245] [cursor=pointer]:
+                    - /url: /packages/@agimon-ai/log-sink-mcp
+                - paragraph [ref=e1246]: Log sink MCP server with HTTP ingestion and AI analysis
+                - generic [ref=e1247]:
+                  - generic [ref=e1248]: agiflow-ai
+                  - generic [ref=e1249]: 14.1K/mo
+                  - generic [ref=e1250]: 13h ago
+                - generic [ref=e1251]: package
+                - generic "Links for @agimon-ai/log-sink-mcp" [ref=e1253]:
+                  - link "npm" [ref=e1254] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@agimon-ai/log-sink-mcp
+                  - link "report" [ref=e1257] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40agimon-ai%2Flog-sink-mcp&package-name=%40agimon-ai%2Flog-sink-mcp&package-version=0.29.11
+                - generic [ref=e1260]:
+                  - code [ref=e1261]: $ pi install npm:@agimon-ai/log-sink-mcp
+                  - button "[ Copy ]" [ref=e1262] [cursor=pointer]
+            - article [ref=e1263]:
+              - generic [ref=e1269]:
+                - heading [level=3] [ref=e1270]:
+                  - link "@hypabolic/pi-hypa" [ref=e1271] [cursor=pointer]:
+                    - /url: /packages/@hypabolic/pi-hypa
+                - paragraph [ref=e1272]: Pi extension that keeps noisy tool output out of your context window. Automatically rewrites shell commands through Hypa for local, deterministic compression, context-aware file tools, and recoverable evidence.
+                - generic [ref=e1273]:
+                  - generic [ref=e1274]: atomic-mg
+                  - generic [ref=e1275]: 13.8K/mo
+                  - generic [ref=e1276]: 5d ago
+                - generic [ref=e1277]: package
+                - generic "Links for @hypabolic/pi-hypa" [ref=e1279]:
+                  - link "npm" [ref=e1280] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@hypabolic/pi-hypa
+                  - link "repo" [ref=e1283] [cursor=pointer]:
+                    - /url: https://github.com/Hypabolic/Hypa
+                  - link "report" [ref=e1286] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40hypabolic%2Fpi-hypa&package-name=%40hypabolic%2Fpi-hypa&package-version=0.1.14
+                - generic [ref=e1289]:
+                  - code [ref=e1290]: $ pi install npm:@hypabolic/pi-hypa
+                  - button "[ Copy ]" [ref=e1291] [cursor=pointer]
+            - article [ref=e1292]:
+              - generic [ref=e1298]:
+                - heading [level=3] [ref=e1299]:
+                  - link "pi-prompt-template-model" [ref=e1300] [cursor=pointer]:
+                    - /url: /packages/pi-prompt-template-model
+                - paragraph [ref=e1301]: Prompt template model selector extension for pi coding agent
+                - generic [ref=e1302]:
+                  - generic [ref=e1303]: nicopreme
+                  - generic [ref=e1304]: 13.8K/mo
+                  - generic [ref=e1305]: 8d ago
+                - generic [ref=e1306]:
+                  - generic [ref=e1307]: extension
+                  - generic [ref=e1308]: prompt
+                - generic "Links for pi-prompt-template-model" [ref=e1309]:
+                  - link "npm" [ref=e1310] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-prompt-template-model
+                  - link "repo" [ref=e1313] [cursor=pointer]:
+                    - /url: https://github.com/nicobailon/pi-prompt-template-model
+                  - link "report" [ref=e1316] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-prompt-template-model&package-name=pi-prompt-template-model&package-version=0.12.0
+                - generic [ref=e1319]:
+                  - code [ref=e1320]: $ pi install npm:pi-prompt-template-model
+                  - button "[ Copy ]" [ref=e1321] [cursor=pointer]
+            - article [ref=e1322]:
+              - generic [ref=e1328]:
+                - heading [level=3] [ref=e1329]:
+                  - link "@trim21/personal-pi-extensions" [ref=e1330] [cursor=pointer]:
+                    - /url: /packages/@trim21/personal-pi-extensions
+                - paragraph [ref=e1331]: "Custom pi coding-agent extensions: bwrap sandbox, workspace guard, opencode edit, and more"
+                - generic [ref=e1332]:
+                  - generic [ref=e1333]: trim21
+                  - generic [ref=e1334]: 13.7K/mo
+                  - generic [ref=e1335]: 10h ago
+                - generic [ref=e1336]: package
+                - generic "Links for @trim21/personal-pi-extensions" [ref=e1338]:
+                  - link "npm" [ref=e1339] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@trim21/personal-pi-extensions
+                  - link "repo" [ref=e1342] [cursor=pointer]:
+                    - /url: https://github.com/trim21/pi-extensions
+                  - link "report" [ref=e1345] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40trim21%2Fpersonal-pi-extensions&package-name=%40trim21%2Fpersonal-pi-extensions&package-version=0.0.309
+                - generic [ref=e1348]:
+                  - code [ref=e1349]: $ pi install npm:@trim21/personal-pi-extensions
+                  - button "[ Copy ]" [ref=e1350] [cursor=pointer]
+            - article [ref=e1351]:
+              - generic [ref=e1357]:
+                - heading [level=3] [ref=e1358]:
+                  - link "pi-rtk-optimizer" [ref=e1359] [cursor=pointer]:
+                    - /url: /packages/pi-rtk-optimizer
+                - paragraph [ref=e1360]: Pi extension that optimizes RTK command rewriting and tool output compaction for the coding agent.
+                - generic [ref=e1361]:
+                  - generic [ref=e1362]: masurii
+                  - generic [ref=e1363]: 13.5K/mo
+                  - generic [ref=e1364]: 1mo ago
+                - generic [ref=e1365]: extension
+                - generic "Links for pi-rtk-optimizer" [ref=e1367]:
+                  - link "npm" [ref=e1368] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-rtk-optimizer
+                  - link "repo" [ref=e1371] [cursor=pointer]:
+                    - /url: https://github.com/MasuRii/pi-rtk-optimizer
+                  - link "report" [ref=e1374] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-rtk-optimizer&package-name=pi-rtk-optimizer&package-version=0.9.0
+                - generic [ref=e1377]:
+                  - code [ref=e1378]: $ pi install npm:pi-rtk-optimizer
+                  - button "[ Copy ]" [ref=e1379] [cursor=pointer]
+            - article [ref=e1380]:
+              - generic [ref=e1386]:
+                - heading [level=3] [ref=e1387]:
+                  - link "pi-landstrip" [ref=e1388] [cursor=pointer]:
+                    - /url: /packages/pi-landstrip
+                - paragraph [ref=e1389]: Sandboxed Bash and process-backed agents for Pi
+                - generic [ref=e1390]:
+                  - generic [ref=e1391]: jarkkojs
+                  - generic [ref=e1392]: 13.2K/mo
+                  - generic [ref=e1393]: 8h ago
+                - generic [ref=e1394]: extension
+                - generic "Links for pi-landstrip" [ref=e1396]:
+                  - link "npm" [ref=e1397] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-landstrip
+                  - link "repo" [ref=e1400] [cursor=pointer]:
+                    - /url: https://github.com/landstrip/landstrip
+                  - link "report" [ref=e1403] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-landstrip&package-name=pi-landstrip&package-version=0.18.33
+                - generic [ref=e1406]:
+                  - code [ref=e1407]: $ pi install npm:pi-landstrip
+                  - button "[ Copy ]" [ref=e1408] [cursor=pointer]
+            - article [ref=e1409]:
+              - generic [ref=e1415]:
+                - heading [level=3] [ref=e1416]:
+                  - link "pi-cc-extensions" [ref=e1417] [cursor=pointer]:
+                    - /url: /packages/pi-cc-extensions
+                - paragraph [ref=e1418]: A Pi productivity suite with Claude Code-style UI, context inspection, and agent/session references
+                - generic [ref=e1419]:
+                  - generic [ref=e1420]: minuque
+                  - generic [ref=e1421]: 13.1K/mo
+                  - generic [ref=e1422]: 23m ago
+                - generic [ref=e1423]: extension
+                - generic "Links for pi-cc-extensions" [ref=e1425]:
+                  - link "npm" [ref=e1426] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/pi-cc-extensions
+                  - link "repo" [ref=e1429] [cursor=pointer]:
+                    - /url: https://github.com/minuque/pi-cc-extensions
+                  - link "report" [ref=e1432] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+pi-cc-extensions&package-name=pi-cc-extensions&package-version=0.8.61
+                - generic [ref=e1435]:
+                  - code [ref=e1436]: $ pi install npm:pi-cc-extensions
+                  - button "[ Copy ]" [ref=e1437] [cursor=pointer]
+            - article [ref=e1438]:
+              - generic [ref=e1444]:
+                - heading [level=3] [ref=e1445]:
+                  - link "@reddb-io/red-skills-dev" [ref=e1446] [cursor=pointer]:
+                    - /url: /packages/@reddb-io/red-skills-dev
+                - paragraph [ref=e1447]: reddb.io dev plugin - engineering skills for code agents (autonomous /afk loop, /go dispatch, triage, tdd, diagnose, graph-aware codebase understanding, ...)
+                - generic [ref=e1448]:
+                  - generic [ref=e1449]: fforattini
+                  - generic [ref=e1450]: 13K/mo
+                  - generic [ref=e1451]: 2d ago
+                - generic [ref=e1452]: package
+                - generic "Links for @reddb-io/red-skills-dev" [ref=e1454]:
+                  - link "npm" [ref=e1455] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@reddb-io/red-skills-dev
+                  - link "repo" [ref=e1458] [cursor=pointer]:
+                    - /url: https://github.com/reddb-io/red-skills
+                  - link "report" [ref=e1461] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40reddb-io%2Fred-skills-dev&package-name=%40reddb-io%2Fred-skills-dev&package-version=3.18.12
+                - generic [ref=e1464]:
+                  - code [ref=e1465]: $ pi install npm:@reddb-io/red-skills-dev
+                  - button "[ Copy ]" [ref=e1466] [cursor=pointer]
+            - article [ref=e1467]:
+              - generic [ref=e1473]:
+                - heading [level=3] [ref=e1474]:
+                  - link "@reddb-io/red-skills-memory" [ref=e1475] [cursor=pointer]:
+                    - /url: /packages/@reddb-io/red-skills-memory
+                - paragraph [ref=e1476]: reddb.io memory plugin - governed operational memory for code agents that lives on top of dev. Supports markdown notes, RedDB graph memory, zero-token governed recall, context packs, claim checks, readiness, optional lifecycle hooks, MCP/HTTP read surface
+                - generic [ref=e1477]:
+                  - generic [ref=e1478]: fforattini
+                  - generic [ref=e1479]: 12.8K/mo
+                  - generic [ref=e1480]: 2d ago
+                - generic [ref=e1481]: package
+                - generic "Links for @reddb-io/red-skills-memory" [ref=e1483]:
+                  - link "npm" [ref=e1484] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@reddb-io/red-skills-memory
+                  - link "repo" [ref=e1487] [cursor=pointer]:
+                    - /url: https://github.com/reddb-io/red-skills
+                  - link "report" [ref=e1490] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40reddb-io%2Fred-skills-memory&package-name=%40reddb-io%2Fred-skills-memory&package-version=3.18.12
+                - generic [ref=e1493]:
+                  - code [ref=e1494]: $ pi install npm:@reddb-io/red-skills-memory
+                  - button "[ Copy ]" [ref=e1495] [cursor=pointer]
+            - article [ref=e1496]:
+              - generic [ref=e1502]:
+                - heading [level=3] [ref=e1503]:
+                  - link "@reddb-io/red-skills-internal" [ref=e1504] [cursor=pointer]:
+                    - /url: /packages/@reddb-io/red-skills-internal
+                - paragraph [ref=e1505]: reddb.io internal plugin - maintainer-only skills for operating the red-skills repository.
+                - generic [ref=e1506]:
+                  - generic [ref=e1507]: fforattini
+                  - generic [ref=e1508]: 12.8K/mo
+                  - generic [ref=e1509]: 2d ago
+                - generic [ref=e1510]: package
+                - generic "Links for @reddb-io/red-skills-internal" [ref=e1512]:
+                  - link "npm" [ref=e1513] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/@reddb-io/red-skills-internal
+                  - link "repo" [ref=e1516] [cursor=pointer]:
+                    - /url: https://github.com/reddb-io/red-skills
+                  - link "report" [ref=e1519] [cursor=pointer]:
+                    - /url: https://github.com/earendil-works/pi/issues/new?template=package-report.yml&labels=package-report&title=Package+Report%3A+%40reddb-io%2Fred-skills-internal&package-name=%40reddb-io%2Fred-skills-internal&package-version=3.18.12
+                - generic [ref=e1522]:
+                  - code [ref=e1523]: $ pi install npm:@reddb-io/red-skills-internal
+                  - button "[ Copy ]" [ref=e1524] [cursor=pointer]
+          - navigation "Package pages" [ref=e1525]:
+            - generic: ← Previous
+            - generic [ref=e1526]:
+              - generic: "1"
+              - link "2" [ref=e1527] [cursor=pointer]:
+                - /url: /packages?page=2
+              - link "3" [ref=e1528] [cursor=pointer]:
+                - /url: /packages?page=3
+              - generic: …
+              - link "109" [ref=e1529] [cursor=pointer]:
+                - /url: /packages?page=109
+            - link "Next →" [ref=e1530] [cursor=pointer]:
+              - /url: /packages?page=2
+    - contentinfo [ref=e1531]:
+      - generic [ref=e1532]:
+        - generic [ref=e1533]:
+          - generic [ref=e1534]:
+            - link "Earendil Inc." [ref=e1535] [cursor=pointer]:
+              - /url: https://earendil.com/
+            - text: "& Contributors"
+          - link "Press Kit" [ref=e1537] [cursor=pointer]:
+            - /url: /press-kit
+          - generic [ref=e1538]: MIT License
+        - generic [ref=e1539]:
+          - generic [ref=e1540]:
+            - generic [ref=e1541]:
+              - link "GitHub" [ref=e1542] [cursor=pointer]:
+                - /url: https://github.com/earendil-works/pi/tree/main/packages/coding-agent
+              - link "npm" [ref=e1545] [cursor=pointer]:
+                - /url: https://www.npmjs.com/package/@earendil-works/pi-coding-agent
+              - link "Discord" [ref=e1548] [cursor=pointer]:
+                - /url: https://discord.com/invite/3cU7Bz4UPx
+              - link "X" [ref=e1551] [cursor=pointer]:
+                - /url: https://x.com/pidotdev
+            - link "Earendil Inc. website" [ref=e1554] [cursor=pointer]:
+              - /url: https://earendil.com
+            - 'button "Theme preference: system (light). Switch to light theme." [ref=e1557] [cursor=pointer]':
+              - generic [ref=e1566]:
+                - generic [ref=e1567]: Auto
+                - generic [ref=e1568]: Light
+                - generic [ref=e1569]: Dark
+          - generic [ref=e1570]:
+            - text: pi.dev domain graciously donated by
+            - link "exe.dev" [ref=e1571] [cursor=pointer]:
+              - /url: https://exe.dev
