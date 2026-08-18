@@ -29,6 +29,10 @@ export class BookmarkService implements vscode.Disposable {
   private readonly liveLines = new Map<string, Map<string, number>>();
   /** 已知在磁盘上消失的文件（URI 字符串）。只由删除事件填充，文件重新可读时清除。 */
   private readonly missingUris = new Set<string>();
+  /** 文档 URI -> 该文档上的书签。避免每次编辑、装饰刷新都遍历全部书签解析路径。 */
+  private uriIndex = new Map<string, Bookmark[]>();
+  /** 建立索引时的工作区文件夹签名；签名变化（工作区增减）时重建索引。 */
+  private indexFoldersSignature = '';
   private readonly changeEmitter = new vscode.EventEmitter<void>();
   private diagnostics: TreeDiagnostics = { resolvableOrphans: [], pendingOrphans: [], cycleBroken: [], depthTruncated: [] };
 
@@ -51,11 +55,14 @@ export class BookmarkService implements vscode.Disposable {
   /** 存储层的数据变了（本窗口写入、其他窗口写入、或远端同步）。 */
   refreshFromStorage(): void {
     this.view = this.storage.getView();
+    this.rebuildUriIndex();
     this.changeEmitter.fire();
   }
 
   applyConfig(config: MyBookmarkConfig): void {
     this.config = config;
+    // pathMappings 影响 external 书签的路径解析，索引需要重建。
+    this.rebuildUriIndex();
     this.changeEmitter.fire();
   }
 
@@ -122,8 +129,7 @@ export class BookmarkService implements vscode.Disposable {
   }
 
   getBookmarksForDocument(uri: vscode.Uri): Bookmark[] {
-    const key = uri.toString();
-    return this.view.bookmarks.filter((item) => this.resolveUri(item)?.toString() === key);
+    return [...(this.ensureUriIndex().get(uri.toString()) ?? [])];
   }
 
   // ---------------------------------------------------------------- 编辑跟踪
@@ -131,16 +137,17 @@ export class BookmarkService implements vscode.Disposable {
   /**
    * 记录未保存的行号变化。刻意不落盘：磁盘内容没变，其他窗口看到的就应该是旧行号。
    *
-   * 返回 true 表示这份文档有书签且发生了编辑，调用方应按行号重画装饰——即使没有书签位移，
-   * 也要避免旧的装饰区间被编辑撑成跨行。
+   * 返回 true 表示这份文档有书签且行号发生了位移，调用方只需重画该文档的装饰。
+   * 行数不变的编辑（纯行内修改、等量换行）不会移动任何书签，装饰钉在行号上无需重画。
    */
   trackDocumentEdits(uri: vscode.Uri, edits: readonly LineEdit[]): boolean {
     const bookmarks = this.getBookmarksForDocument(uri);
     if (bookmarks.length === 0 || edits.length === 0) return false;
+    if (edits.every((edit) => edit.insertedLineCount === edit.endLineExclusive - edit.startLine)) return false;
     const key = uri.toString();
     const tracked = bookmarks.map((item) => ({ id: item.id, line: this.getLine(item) }));
     const moved = applyLineEdits(tracked, edits);
-    if (moved.length === 0) return true;
+    if (moved.length === 0) return false;
 
     const lines = this.liveLines.get(key) ?? new Map<string, number>();
     for (const entry of moved) lines.set(entry.id, entry.line);
@@ -208,12 +215,15 @@ export class BookmarkService implements vscode.Disposable {
     this.markPresent(document.uri);
     const bookmarks = this.getBookmarksForDocument(document.uri);
     if (bookmarks.length === 0) return;
-    const lines = Array.from({ length: document.lineCount }, (_, index) => document.lineAt(index).text);
+    // 按需读取：只碰每张书签锚点窗口内的行，而不是把整个文档读进内存。
+    const readLine = (index: number): string | undefined => (
+      index < 0 || index >= document.lineCount ? undefined : document.lineAt(index).text
+    );
     const updates: { id: string; line: number }[] = [];
     for (const item of bookmarks) {
       if (item.anchorText === undefined) continue;
       const current = this.view.positions.get(item.id) ?? item.line;
-      const found = reanchor(lines, item.anchorText, current);
+      const found = reanchor(readLine, item.anchorText, current);
       if (found !== undefined && found !== current) updates.push({ id: item.id, line: found });
     }
     if (updates.length === 0) return;
@@ -490,11 +500,13 @@ export class BookmarkService implements vscode.Disposable {
     if (mutation === undefined) return;
     const rollback = this.view;
     this.view = applyMutationLocally(this.view, mutation);
+    this.rebuildUriIndex();
     this.changeEmitter.fire();
     try {
       await this.storage.mutate(build);
     } catch (error) {
       this.view = this.storage.isReadOnly() ? rollback : this.storage.getView();
+      this.rebuildUriIndex();
       this.changeEmitter.fire();
       throw error;
     }
@@ -505,6 +517,28 @@ export class BookmarkService implements vscode.Disposable {
       const bookmark = view.bookmarks.find((item) => item.id === id);
       return bookmark === undefined ? undefined : { upsertBookmarks: [update(bookmark)] };
     });
+  }
+
+  /** 按当前书签与配置重建「文档 URI -> 书签」索引。解析不出路径的书签不进入任何文档。 */
+  private rebuildUriIndex(): void {
+    this.uriIndex = new Map();
+    const folders = workspaceFolders();
+    this.indexFoldersSignature = JSON.stringify(folders);
+    const options = { caseSensitive: process.platform === 'linux', pathMappings: this.config.pathMappings };
+    for (const bookmark of this.view.bookmarks) {
+      const fsPath = resolveLocation(bookmark.location, folders, options);
+      if (fsPath === undefined) continue;
+      const key = vscode.Uri.file(fsPath).toString();
+      const entries = this.uriIndex.get(key);
+      if (entries === undefined) this.uriIndex.set(key, [bookmark]);
+      else entries.push(bookmark);
+    }
+  }
+
+  /** 工作区文件夹增减后签名变化，索引需要重建；签名相同直接复用。 */
+  private ensureUriIndex(): Map<string, Bookmark[]> {
+    if (JSON.stringify(workspaceFolders()) !== this.indexFoldersSignature) this.rebuildUriIndex();
+    return this.uriIndex;
   }
 
   private appendOrder(parentId: string | undefined, view: SharedStateView = this.view): string {

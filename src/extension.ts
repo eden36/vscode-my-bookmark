@@ -116,8 +116,13 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeTextDocument((event) => {
       const edits = toLineEdits(event.contentChanges);
       if (edits.length === 0) return;
-      // 行号变化只重画装饰，绝不刷新整棵树：书签上千时每次击键重建一遍会拖垮编辑器。
-      if (service.trackDocumentEdits(event.document.uri, edits)) decorations.refreshAll();
+      // 书签行号位移才重画装饰，且只刷发生编辑的那个编辑器：书签上千时每次击键
+      // 全量重建所有可见编辑器的装饰会拖垮输入。
+      if (!service.trackDocumentEdits(event.document.uri, edits)) return;
+      const key = event.document.uri.toString();
+      for (const editor of vscode.window.visibleTextEditors) {
+        if (editor.document.uri.toString() === key) decorations.refresh(editor);
+      }
     }),
     vscode.workspace.onDidSaveTextDocument((document) => {
       void service.flushDocument(document.uri).catch((error: unknown) => logError('保存书签行号失败', error));

@@ -51,24 +51,26 @@ export function applyLineEdits(lines: readonly TrackedLine[], edits: readonly Li
 /**
  * 用锚点文本在给定行号附近重新定位。
  *
- * 返回 undefined 表示放弃重定位（保留原行号）。宁可不动也不能猜错：锚点文本很可能是
- * `}` 这类在窗口内反复出现的内容，一旦选错行，书签会指到毫不相干的地方。
+ * 行内容通过 readLine 按需读取（越界返回 undefined）：文档可能几万行，逐行读整个文件
+ * 会拖慢每次打开。返回 undefined 表示放弃重定位（保留原行号）。宁可不动也不能猜错：
+ * 锚点文本很可能是 `}` 这类在窗口内反复出现的内容，一旦选错行，书签会指到毫不相干的地方。
  */
 export function reanchor(
-  documentLines: readonly string[],
+  readLine: (index: number) => string | undefined,
   anchorText: string,
   expectedLine: number,
   windowSize = 50,
 ): number | undefined {
   const anchor = anchorText.trim();
   if (anchor.length === 0) return undefined;
-  if (documentLines[expectedLine]?.trim() === anchor) return expectedLine;
+  if (readLine(expectedLine)?.trim() === anchor) return expectedLine;
 
   const from = Math.max(0, expectedLine - windowSize);
-  const to = Math.min(documentLines.length - 1, expectedLine + windowSize);
+  const to = expectedLine + windowSize;
   let match: number | undefined;
   for (let line = from; line <= to; line += 1) {
-    if (documentLines[line]?.trim() !== anchor) continue;
+    const text = readLine(line);
+    if (text === undefined || text.trim() !== anchor) continue;
     // 窗口内出现第二处匹配就说明锚点没有区分度，此时任何选择都是猜测。
     if (match !== undefined) return undefined;
     match = line;

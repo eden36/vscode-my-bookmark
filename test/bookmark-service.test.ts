@@ -36,6 +36,7 @@ vi.mock('vscode', () => {
 
 import * as vscode from 'vscode';
 import { BookmarkService } from '../src/bookmark-service';
+import type { LineEdit } from '../src/core/tracker';
 import type { BookmarkMutation, SharedStateView, StorageService } from '../src/storage';
 
 /** 只记录写入并把变更落回视图，不碰文件系统——本文件测的是应用层的决策，不是存储。 */
@@ -77,6 +78,9 @@ const uri = vscode.Uri.file('D:/proj/src/app.ts');
 const otherUri = vscode.Uri.file('D:/proj/src/other.ts');
 const lines = (...values: number[]): { line: number; lineText: string }[] => (
   values.map((line) => ({ line, lineText: `第 ${line} 行` }))
+);
+const insert = (startLine: number, count: number): LineEdit => (
+  { startLine, endLineExclusive: startLine, insertedLineCount: count }
 );
 
 let context: ReturnType<typeof createService>;
@@ -235,5 +239,57 @@ describe('BookmarkService 全部书签', () => {
     service.getAllBookmarks().length = 0;
 
     expect(service.getAllBookmarks()).toHaveLength(1);
+  });
+});
+
+describe('BookmarkService 编辑跟踪', () => {
+  it('没有书签的文档编辑返回 false，不触发装饰刷新', async () => {
+    const { service } = context;
+
+    expect(service.trackDocumentEdits(otherUri, [insert(0, 2)])).toBe(false);
+  });
+
+  it('纯行内编辑不移动书签，返回 false', async () => {
+    const { service } = context;
+    await service.toggleLines(uri, lines(3, 10));
+
+    expect(service.trackDocumentEdits(uri, [{ startLine: 0, endLineExclusive: 1, insertedLineCount: 1 }])).toBe(false);
+  });
+
+  it('行数不变的改写不移动书签，返回 false', async () => {
+    const { service } = context;
+    await service.toggleLines(uri, lines(10));
+
+    expect(service.trackDocumentEdits(uri, [{ startLine: 0, endLineExclusive: 3, insertedLineCount: 3 }])).toBe(false);
+  });
+
+  it('上方插入行时书签下移，实时行号优先于磁盘位置', async () => {
+    const { service } = context;
+    await service.toggleLines(uri, lines(3));
+
+    expect(service.trackDocumentEdits(uri, [insert(0, 2)])).toBe(true);
+
+    expect(service.getLine(service.getAllBookmarks()[0]!)).toBe(5);
+  });
+
+  it('编辑只影响所在文档的书签', async () => {
+    const { service } = context;
+    await service.toggleLines(uri, lines(3));
+    await service.toggleLines(otherUri, lines(3));
+
+    service.trackDocumentEdits(uri, [insert(0, 2)]);
+
+    expect(service.getLine(service.getBookmarksForDocument(uri)[0]!)).toBe(5);
+    expect(service.getLine(service.getBookmarksForDocument(otherUri)[0]!)).toBe(3);
+  });
+
+  it('实时行号在文档丢弃后回到磁盘位置', async () => {
+    const { service } = context;
+    await service.toggleLines(uri, lines(3));
+
+    service.trackDocumentEdits(uri, [insert(0, 2)]);
+    service.discardDocument(uri);
+
+    expect(service.getLine(service.getAllBookmarks()[0]!)).toBe(3);
   });
 });

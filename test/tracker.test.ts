@@ -61,34 +61,42 @@ describe('行号跟踪', () => {
 
 describe('锚点重定位', () => {
   const document = ['const a = 1;', 'const b = 2;', '', 'function demo() {', '  return 1;', '}'];
+  const read = (lines: readonly string[]) => (index: number) => lines[index];
 
   it('原行号仍匹配时保持不动', () => {
-    expect(reanchor(document, 'function demo() {', 3)).toBe(3);
+    expect(reanchor(read(document), 'function demo() {', 3)).toBe(3);
   });
 
   it('内容位移后在窗口内找回', () => {
-    expect(reanchor(document, 'function demo() {', 0)).toBe(3);
+    expect(reanchor(read(document), 'function demo() {', 0)).toBe(3);
   });
 
   it('忽略缩进差异', () => {
-    expect(reanchor(document, 'return 1;', 4)).toBe(4);
+    expect(reanchor(read(document), 'return 1;', 4)).toBe(4);
   });
 
   it('窗口内存在多处相同锚点时放弃重定位', () => {
     // 锚点没有区分度时任何选择都是猜测，宁可保留原行号也不能指到无关位置。
-    expect(reanchor(['}', 'x', '}'], '}', 1)).toBeUndefined();
+    expect(reanchor(read(['}', 'x', '}']), '}', 1)).toBeUndefined();
   });
 
   it('找不到锚点或锚点为空时返回 undefined', () => {
-    expect(reanchor(document, 'never-exists', 0)).toBeUndefined();
-    expect(reanchor(document, '   ', 0)).toBeUndefined();
+    expect(reanchor(read(document), 'never-exists', 0)).toBeUndefined();
+    expect(reanchor(read(document), '   ', 0)).toBeUndefined();
   });
 
   it('超出窗口范围的匹配不会被采纳', () => {
     const long = Array.from({ length: 200 }, (_, index) => `line ${index}`);
 
-    expect(reanchor(long, 'line 199', 0, 50)).toBeUndefined();
-    expect(reanchor(long, 'line 40', 0, 50)).toBe(40);
+    expect(reanchor(read(long), 'line 199', 0, 50)).toBeUndefined();
+    expect(reanchor(read(long), 'line 40', 0, 50)).toBe(40);
+  });
+
+  it('行号越界时仍可在窗口内找回', () => {
+    const lines = Array.from({ length: 10 }, (_, index) => `line ${index}`);
+
+    expect(reanchor(read(lines), 'line 7', 20)).toBe(7);
+    expect(reanchor(read(lines), 'line 7', -1)).toBe(7);
   });
 });
 
