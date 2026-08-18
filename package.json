@@ -67,6 +67,7 @@
       { "command": "myBookmark.moveUp", "title": "上移" },
       { "command": "myBookmark.moveDown", "title": "下移" },
       { "command": "myBookmark.remove", "title": "删除", "icon": "$(trash)" },
+      { "command": "myBookmark.removeFromFile", "title": "My Bookmark: 清除当前文件的书签" },
       { "command": "myBookmark.removeAll", "title": "My Bookmark: 删除全部书签" },
       { "command": "myBookmark.toggleScope", "title": "切换显示范围", "icon": "$(filter)" },
       { "command": "myBookmark.reanchorAll", "title": "My Bookmark: 重新锚定全部书签" },

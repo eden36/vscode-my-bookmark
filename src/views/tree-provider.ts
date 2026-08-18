@@ -65,6 +65,8 @@ export class BookmarkTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     const line = this.service.getLine(bookmark);
     const uri = this.service.resolveUri(bookmark);
     const fileName = uri === undefined ? locationLabel(bookmark) : basename(uri.path);
+    // 工作区没打开、或文件已被删除，两种情况都跳不过去，图标上必须看得出来。
+    const missing = uri === undefined || this.service.isMissing(bookmark);
 
     // 优先显示备注；没有备注时退回创建时记录的行内容，比只显示文件名有用得多。
     const label = bookmark.note?.trim() || bookmark.anchorText?.trim() || fileName;
@@ -72,21 +74,27 @@ export class BookmarkTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.id = bookmark.id;
     item.contextValue = 'bookmark';
     item.description = `${fileName}:${line + 1}`;
-    item.iconPath = new vscode.ThemeIcon(uri === undefined ? 'warning' : 'bookmark', themeColor(bookmark.color));
-    item.tooltip = this.tooltip(bookmark, line, uri);
+    item.iconPath = new vscode.ThemeIcon(missing ? 'warning' : 'bookmark', themeColor(bookmark.color));
+    item.tooltip = this.tooltip(bookmark, line, uri, missing);
     if (uri !== undefined) {
       item.command = { command: 'myBookmark.open', title: '打开书签', arguments: [bookmark.id] };
     }
     return item;
   }
 
-  private tooltip(bookmark: Bookmark, line: number, uri: vscode.Uri | undefined): vscode.MarkdownString {
+  private tooltip(
+    bookmark: Bookmark,
+    line: number,
+    uri: vscode.Uri | undefined,
+    missing: boolean,
+  ): vscode.MarkdownString {
     const tooltip = new vscode.MarkdownString();
     if (bookmark.note) tooltip.appendMarkdown(`**${escapeMarkdown(bookmark.note)}**\n\n`);
     tooltip.appendMarkdown(`${escapeMarkdown(locationLabel(bookmark))}:${line + 1}\n\n`);
     if (bookmark.anchorText) tooltip.appendCodeblock(bookmark.anchorText.trim());
-    // 工作区没打开时路径解析不出来，此时提示用户原因，而不是让书签看起来像坏了。
+    // 跳不过去时说明原因，而不是让书签看起来像坏了。
     if (uri === undefined) tooltip.appendMarkdown('\n\n所属工作区当前未打开，暂时无法跳转。');
+    else if (missing) tooltip.appendMarkdown('\n\n文件已被删除，书签保留待恢复。');
     return tooltip;
   }
 }

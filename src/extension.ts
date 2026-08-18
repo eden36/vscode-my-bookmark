@@ -52,17 +52,30 @@ export function activate(context: vscode.ExtensionContext): void {
     ...registerFileEvents(service, log),
   );
 
-  const sync = config.syncEnabled ? new SyncService(storage, log) : undefined;
-  if (sync !== undefined) {
-    context.subscriptions.push(
-      sync,
-      startSyncPolling(
-        () => sync.reconcile(),
-        (error) => logError('定时同步失败', error),
-        config.syncIntervalMinutes * 60_000,
-      ),
+  // 同步开关与轮询间隔要能当场生效：关闭同步是隐私相关的操作，静默拖到下次重载才停不合适。
+  let sync: SyncService | undefined;
+  let syncPolling: vscode.Disposable | undefined;
+  const applySyncConfig = (): void => {
+    syncPolling?.dispose();
+    syncPolling = undefined;
+    sync?.dispose();
+    sync = undefined;
+    if (!config.syncEnabled) return;
+    const created = new SyncService(storage, log);
+    sync = created;
+    syncPolling = startSyncPolling(
+      () => created.reconcile(),
+      (error) => logError('定时同步失败', error),
+      config.syncIntervalMinutes * 60_000,
     );
-  }
+  };
+  applySyncConfig();
+  context.subscriptions.push({
+    dispose: () => {
+      syncPolling?.dispose();
+      sync?.dispose();
+    },
+  });
 
   context.subscriptions.push(
     storage.onDidChange((change) => {
@@ -78,9 +91,24 @@ export function activate(context: vscode.ExtensionContext): void {
       updateMessage();
     }),
     onDidChangeConfig(() => {
+      const previous = config;
       config = readConfig();
       decorations.setShowNote(config.showNoteInEditor);
       service.applyConfig(config);
+
+      if (config.syncEnabled !== previous.syncEnabled || config.syncIntervalMinutes !== previous.syncIntervalMinutes) {
+        applySyncConfig();
+        log(`同步设置已更新 启用=${config.syncEnabled} 间隔=${config.syncIntervalMinutes}`);
+        // 刚打开同步时立刻对一次账，不必让用户干等一个轮询周期。
+        void sync?.reconcile().catch((error: unknown) => logError('同步失败', error));
+      }
+      // 数据目录换了要重开 StorageService 与文件监听，热切换的收益不值当，交给用户重载窗口。
+      if (config.dataDirectory !== previous.dataDirectory) {
+        void vscode.window.showInformationMessage('书签数据目录已修改，重新加载窗口后生效。', '重新加载窗口')
+          .then((choice) => {
+            if (choice === '重新加载窗口') void vscode.commands.executeCommand('workbench.action.reloadWindow');
+          });
+      }
     }),
   );
 
@@ -114,7 +142,18 @@ export function activate(context: vscode.ExtensionContext): void {
   void (async () => {
     const failures: string[] = [];
     await runStartupStep(failures, log, '初始化书签数据', () => service.initialize());
-    if (sync !== undefined) await runStartupStep(failures, log, '同步书签', () => sync.reconcile());
+    // onDidOpenTextDocument 只对新打开的文档触发，窗口恢复出来的那些编辑器不会补发事件，
+    // 切分支后重开 VS Code 时它们的书签行号会一直停在旧位置，只能在这里补一次。
+    for (const document of vscode.workspace.textDocuments) {
+      if (document.uri.scheme !== 'file') continue;
+      try {
+        await service.reanchorDocument(document);
+      } catch (error) {
+        logError('重新锚定书签失败', error);
+      }
+    }
+    const current = sync;
+    if (current !== undefined) await runStartupStep(failures, log, '同步书签', () => current.reconcile());
     updateMessage();
     decorations.refreshAll();
 

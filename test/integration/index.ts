@@ -15,6 +15,7 @@ const EXPECTED_COMMANDS = [
   'myBookmark.moveUp',
   'myBookmark.moveDown',
   'myBookmark.remove',
+  'myBookmark.removeFromFile',
   'myBookmark.removeAll',
   'myBookmark.toggleScope',
   'myBookmark.reanchorAll',

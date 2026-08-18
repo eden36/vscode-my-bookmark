@@ -18,7 +18,8 @@ export function registerFileEvents(
     }),
     vscode.workspace.onDidDeleteFiles((event) => {
       // 刻意不删书签：文件可能是被 git 操作临时移走，删掉就再也回不来了。
-      // 解析不到文件的书签会在树里显示为警告态，由用户决定去留。
+      // 只打上失效标记，树里显示为警告态，由用户决定去留。
+      service.markMissing(event.files);
       log(`已删除 ${event.files.length} 个文件，相关书签保留并标记为暂不可用`);
     }),
   ];

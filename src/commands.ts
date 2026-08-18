@@ -49,41 +49,48 @@ export function registerCommands(
     register('myBookmark.toggle', async () => {
       const editor = vscode.window.activeTextEditor;
       if (editor === undefined) return;
-      const line = editor.selection.active.line;
-      await service.toggle(editor.document.uri, line, { lineText: editor.document.lineAt(line).text });
+      await service.toggleLines(editor.document.uri, selectedLines(editor));
     }),
 
     register('myBookmark.toggleWithNote', async () => {
       const editor = vscode.window.activeTextEditor;
       if (editor === undefined) return;
-      const line = editor.selection.active.line;
+      const lines = selectedLines(editor);
       const existing = service.getBookmarksForDocument(editor.document.uri)
-        .find((item) => service.getLine(item) === line);
+        .find((item) => lines.some((entry) => entry.line === service.getLine(item)));
       const note = await vscode.window.showInputBox({
         title: '书签备注',
         value: existing?.note ?? '',
-        prompt: '为这一行写一句说明',
+        prompt: lines.length > 1 ? `为选中的 ${lines.length} 行写一句说明` : '为这一行写一句说明',
       });
       if (note === undefined) return;
-      await service.toggle(editor.document.uri, line, { note, lineText: editor.document.lineAt(line).text });
+      await service.toggleLines(editor.document.uri, lines, { note });
     }),
 
     register('myBookmark.jumpToNext', () => jumpTo(service, 1)),
     register('myBookmark.jumpToPrevious', () => jumpTo(service, -1)),
 
     register('myBookmark.listFromAll', async () => {
-      const items = service.getTree().length === 0 ? [] : allBookmarks(service);
+      // 这里刻意不走 getTree()：树视图默认只列当前工作区，而「搜索全部书签」的意义
+      // 正是在任意窗口里找到别的项目的书签。
+      const items = service.getAllBookmarks();
       if (items.length === 0) {
         void vscode.window.showInformationMessage('还没有任何书签。');
         return;
       }
       const picked = await vscode.window.showQuickPick(
-        items.map((bookmark) => ({
-          label: bookmark.note?.trim() || bookmark.anchorText?.trim() || '（无备注）',
-          description: `${locationLabel(bookmark)}:${service.getLine(bookmark) + 1}`,
-          bookmark,
-        })),
-        { title: '搜索书签', matchOnDescription: true, placeHolder: '按备注或路径筛选' },
+        items.map((bookmark) => {
+          const note = bookmark.note?.trim();
+          const anchor = bookmark.anchorText?.trim();
+          return {
+            label: note || anchor || '（无备注）',
+            description: `${locationLabel(bookmark)}:${service.getLine(bookmark) + 1}`,
+            // 备注已经占了标题时，把原始行内容留给 detail 当代码预览。
+            ...(note && anchor ? { detail: anchor } : {}),
+            bookmark,
+          };
+        }),
+        { title: '搜索书签', matchOnDescription: true, matchOnDetail: true, placeHolder: '按备注、路径或代码内容筛选' },
       );
       if (picked !== undefined) await openBookmark(service, picked.bookmark);
     }),
@@ -164,8 +171,25 @@ export function registerCommands(
       if (ids.length > 0) await service.remove(ids);
     }),
 
+    register('myBookmark.removeFromFile', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (editor === undefined) return;
+      const total = service.getBookmarksForDocument(editor.document.uri).length;
+      if (total === 0) {
+        void vscode.window.showInformationMessage('当前文件没有书签。');
+        return;
+      }
+      const choice = await vscode.window.showWarningMessage(
+        '清除当前文件的书签？',
+        { modal: true, detail: `将删除 ${total} 条书签，此操作无法撤销。` },
+        '清除',
+      );
+      if (choice !== '清除') return;
+      await service.removeForDocument(editor.document.uri);
+    }),
+
     register('myBookmark.removeAll', async () => {
-      const total = allBookmarks(service).length;
+      const total = service.getAllBookmarks().length;
       if (total === 0) return;
       const choice = await vscode.window.showWarningMessage(
         '删除全部书签？',
@@ -187,7 +211,7 @@ export function registerCommands(
         { location: vscode.ProgressLocation.Notification, title: '正在重新锚定书签…' },
         async () => {
           const uris = new Map<string, vscode.Uri>();
-          for (const bookmark of allBookmarks(service)) {
+          for (const bookmark of service.getAllBookmarks()) {
             const uri = service.resolveUri(bookmark);
             if (uri !== undefined) uris.set(uri.toString(), uri);
           }
@@ -252,16 +276,14 @@ async function jumpTo(service: BookmarkService, direction: 1 | -1): Promise<void
   editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenterIfOutsideViewport);
 }
 
-function allBookmarks(service: BookmarkService): Bookmark[] {
-  const result: Bookmark[] = [];
-  const walk = (nodes: readonly TreeNode[]): void => {
-    for (const node of nodes) {
-      if (node.kind === 'bookmark') result.push(node.bookmark);
-      else walk(node.children);
-    }
-  };
-  walk(service.getTree());
-  return result;
+/** 多光标下每个光标各算一行；同一行上的多个光标只取一次。 */
+function selectedLines(editor: vscode.TextEditor): { line: number; lineText: string }[] {
+  const lines = new Map<number, { line: number; lineText: string }>();
+  for (const selection of editor.selections) {
+    const line = selection.active.line;
+    if (!lines.has(line)) lines.set(line, { line, lineText: editor.document.lineAt(line).text });
+  }
+  return [...lines.values()];
 }
 
 function countBookmarksUnder(service: BookmarkService, folderId: string): number {

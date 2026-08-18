@@ -27,6 +27,8 @@ export class BookmarkService implements vscode.Disposable {
   private config: MyBookmarkConfig = readConfig();
   /** 文档 URI -> 书签 id -> 缓冲区中的当前行号。仅描述未保存的编辑。 */
   private readonly liveLines = new Map<string, Map<string, number>>();
+  /** 已知在磁盘上消失的文件（URI 字符串）。只由删除事件填充，文件重新可读时清除。 */
+  private readonly missingUris = new Set<string>();
   private readonly changeEmitter = new vscode.EventEmitter<void>();
   private diagnostics: TreeDiagnostics = { resolvableOrphans: [], pendingOrphans: [], cycleBroken: [], depthTruncated: [] };
 
@@ -84,6 +86,16 @@ export class BookmarkService implements vscode.Disposable {
     this.diagnostics = result.diagnostics;
     const comparator = this.comparatorFor(this.config.sortMode);
     return comparator === undefined ? result.roots : sortTree(result.roots, comparator);
+  }
+
+  /**
+   * 全部书签，不受 `scope` 过滤影响。
+   *
+   * 树视图默认只列当前工作区，但全局搜索、重新锚定、删除全部这些操作面向的是整份数据，
+   * 走 `getTree()` 会让它们在默认配置下悄悄只处理一部分。
+   */
+  getAllBookmarks(): Bookmark[] {
+    return [...this.view.bookmarks];
   }
 
   getBookmark(id: string): Bookmark | undefined {
@@ -153,12 +165,45 @@ export class BookmarkService implements vscode.Disposable {
   }
 
   /**
+   * 标记文件或目录已被删除。
+   *
+   * 书签本身刻意保留（文件可能只是被 git 临时移走），但树里必须看得出它暂时跳不过去，
+   * 否则用户要等到点击报错才知道。判断依据只用事件，不去探测文件系统——扩展跑在 UI 侧，
+   * 远程场景下本机根本没有这些文件。
+   */
+  markMissing(uris: readonly vscode.Uri[]): void {
+    const deleted = uris.map((uri) => uri.toString());
+    let changed = false;
+    for (const bookmark of this.view.bookmarks) {
+      const current = this.resolveUri(bookmark)?.toString();
+      if (current === undefined || this.missingUris.has(current)) continue;
+      // 删除的可能是整个目录，其下所有文件都要跟着失效。
+      if (!deleted.some((path) => current === path || current.startsWith(`${path}/`))) continue;
+      this.missingUris.add(current);
+      changed = true;
+    }
+    if (changed) this.changeEmitter.fire();
+  }
+
+  /** 文件重新可读，撤销失效标记。 */
+  markPresent(uri: vscode.Uri): void {
+    if (this.missingUris.delete(uri.toString())) this.changeEmitter.fire();
+  }
+
+  isMissing(bookmark: Bookmark): boolean {
+    const uri = this.resolveUri(bookmark);
+    return uri !== undefined && this.missingUris.has(uri.toString());
+  }
+
+  /**
    * 文档打开时按锚点文本重新定位。
    *
    * 关闭的文件在 git 切换分支后行号会静默腐烂，而编辑事件只覆盖打开着的文档，
    * 因此重锚定只能推迟到真正打开文件的那一刻。
    */
   async reanchorDocument(document: vscode.TextDocument): Promise<void> {
+    // 能打开就说明文件还在，无论后面有没有书签需要重定位。
+    this.markPresent(document.uri);
     const bookmarks = this.getBookmarksForDocument(document.uri);
     if (bookmarks.length === 0) return;
     const lines = Array.from({ length: document.lineCount }, (_, index) => document.lineAt(index).text);
@@ -175,41 +220,63 @@ export class BookmarkService implements vscode.Disposable {
 
   // ---------------------------------------------------------------- 变更
 
-  async toggle(uri: vscode.Uri, line: number, options: { note?: string; lineText?: string } = {}): Promise<'added' | 'removed'> {
-    const existing = this.getBookmarksForDocument(uri).find((item) => this.getLine(item) === line);
-    if (existing !== undefined && options.note === undefined) {
-      await this.remove([existing.id]);
+  /**
+   * 在若干行上切换书签，支持多光标。
+   *
+   * 选中的行全都已有书签时整体删除，否则只给还缺书签的行补上——一半增一半删的结果没人能预期。
+   * 无论涉及多少行都只走一次 `apply`，避免多光标操作变成连续多次抢锁落盘。
+   */
+  async toggleLines(
+    uri: vscode.Uri,
+    lines: readonly { line: number; lineText?: string }[],
+    options: { note?: string } = {},
+  ): Promise<'added' | 'removed' | 'none'> {
+    const targets = [...new Map(lines.map((entry) => [entry.line, entry])).values()]
+      .sort((left, right) => left.line - right.line);
+    if (targets.length === 0) return 'none';
+
+    const existing = new Map(this.getBookmarksForDocument(uri).map((item) => [this.getLine(item), item]));
+    const absent = targets.filter((entry) => !existing.has(entry.line));
+    if (absent.length === 0 && options.note === undefined) {
+      await this.remove(targets.map((entry) => existing.get(entry.line)!.id));
       return 'removed';
     }
-    if (existing !== undefined) {
-      await this.setNote(existing.id, options.note);
-      return 'added';
-    }
 
-    const id = randomUUID();
-    const created: Bookmark = {
-      id,
-      location: toLocation(uri.fsPath, workspaceFolders(), { caseSensitive: process.platform === 'linux' }),
-      line,
-      ...(options.lineText?.trim() ? { anchorText: options.lineText.trim() } : {}),
-      ...(options.note ? { note: options.note } : {}),
-      order: this.appendOrder(undefined),
-      createdAt: Date.now(),
-    };
+    const location = toLocation(uri.fsPath, workspaceFolders(), { caseSensitive: process.platform === 'linux' });
+    const createdAt = Date.now();
+    // id 与排序键必须在 build 之外算好：build 会被调用两次，内部生成随机值会让两次结果不一致。
+    let order = this.appendOrder(undefined);
+    const created = absent.map((entry) => {
+      const bookmark: Bookmark = {
+        id: randomUUID(),
+        location,
+        line: entry.line,
+        ...(entry.lineText?.trim() ? { anchorText: entry.lineText.trim() } : {}),
+        ...(options.note ? { note: options.note } : {}),
+        order,
+        createdAt,
+      };
+      order = between(order, undefined);
+      return bookmark;
+    });
+    const renamed = options.note === undefined
+      ? []
+      : targets
+        .map((entry) => existing.get(entry.line))
+        .filter((item): item is Bookmark => item !== undefined)
+        .map((item) => withNote(item, options.note));
+
     await this.apply((view) => ({
-      upsertBookmarks: [created],
-      setPositions: view.positions.get(id) === undefined ? [{ id, line }] : undefined,
+      upsertBookmarks: [...created, ...renamed],
+      setPositions: created
+        .filter((item) => view.positions.get(item.id) === undefined)
+        .map((item) => ({ id: item.id, line: item.line })),
     }));
     return 'added';
   }
 
   async setNote(id: string, note: string | undefined): Promise<void> {
-    await this.updateBookmark(id, (item) => {
-      const next = { ...item };
-      if (note === undefined || note.length === 0) delete next.note;
-      else next.note = note;
-      return next;
-    });
+    await this.updateBookmark(id, (item) => withNote(item, note));
   }
 
   async setColor(ids: readonly string[], color: BookmarkColor | undefined): Promise<void> {
@@ -283,6 +350,13 @@ export class BookmarkService implements vscode.Disposable {
   async remove(ids: readonly string[]): Promise<void> {
     if (ids.length === 0) return;
     await this.apply(() => ({ deleteBookmarks: [...ids] }));
+  }
+
+  /** 清除某个文件上的全部书签，返回删除条数。 */
+  async removeForDocument(uri: vscode.Uri): Promise<number> {
+    const ids = this.getBookmarksForDocument(uri).map((item) => item.id);
+    await this.remove(ids);
+    return ids.length;
   }
 
   async removeAll(): Promise<void> {
@@ -482,6 +556,13 @@ function locationKey(bookmark: Bookmark): string {
   return bookmark.location.kind === 'workspace'
     ? `${bookmark.location.folderName}/${bookmark.location.relativePath}`
     : bookmark.location.fsPath;
+}
+
+function withNote(bookmark: Bookmark, note: string | undefined): Bookmark {
+  const next = { ...bookmark };
+  if (note === undefined || note.length === 0) delete next.note;
+  else next.note = note;
+  return next;
 }
 
 function withColor<T extends { color?: BookmarkColor }>(item: T, color: BookmarkColor | undefined): T {
