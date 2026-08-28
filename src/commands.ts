@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type { BookmarkService } from './bookmark-service';
-import { readConfig, updateScope, type BookmarkScope } from './config';
+import { readConfig, updateDataDirectory, updateScope, type BookmarkScope } from './config';
 import { BOOKMARK_COLORS, type Bookmark, type BookmarkColor } from './core/model';
 import type { TreeNode } from './core/tree';
 import { bookmarkIcon, nodeId, type BookmarkTreeProvider } from './views/tree-provider';
@@ -218,6 +218,34 @@ export function registerCommands(
 
     register('myBookmark.showAllScope', () => setScope('all')),
     register('myBookmark.showCurrentWorkspaceScope', () => setScope('currentWorkspace')),
+
+    register('myBookmark.chooseDataDirectory', async () => {
+      const current = readConfig().dataDirectory;
+      if (current) {
+        const picked = await vscode.window.showQuickPick(
+          [
+            { label: '$(folder-opened) 选择新目录…', action: 'browse' as const },
+            { label: '$(discard) 恢复默认目录', detail: '清除自定义设置，改用系统默认的用户级共享目录', action: 'reset' as const },
+          ],
+          { title: '书签存储目录', placeHolder: `当前目录：${current}` },
+        );
+        if (picked === undefined) return;
+        if (picked.action === 'reset') {
+          await updateDataDirectory('');
+          return;
+        }
+      }
+      const selection = await vscode.window.showOpenDialog({
+        canSelectFiles: false,
+        canSelectFolders: true,
+        canSelectMany: false,
+        openLabel: '选择为书签存储目录',
+        ...(current ? { defaultUri: vscode.Uri.file(current) } : {}),
+      });
+      const folder = selection?.[0];
+      if (folder === undefined) return;
+      await updateDataDirectory(folder.fsPath);
+    }),
 
     register('myBookmark.reanchorAll', async () => {
       await vscode.window.withProgress(

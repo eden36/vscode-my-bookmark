@@ -2,7 +2,7 @@
   "name": "my-bookmark",
   "displayName": "My Bookmark",
   "description": "支持文件夹分组、自定义备注与手动排序的全局书签管理，跨工作区、跨 Profile、多窗口实时同步。",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "saltcoreyan",
   "license": "MIT",
   "repository": {
@@ -71,6 +71,7 @@
       { "command": "myBookmark.remove", "title": "删除", "icon": "$(trash)" },
       { "command": "myBookmark.removeFromFile", "title": "My Bookmark: 清除当前文件的书签" },
       { "command": "myBookmark.removeAll", "title": "My Bookmark: 删除全部书签" },
+      { "command": "myBookmark.chooseDataDirectory", "title": "My Bookmark: 选择书签存储目录" },
       { "command": "myBookmark.toggleScope", "title": "切换显示范围", "icon": "$(filter)" },
       { "command": "myBookmark.showAllScope", "title": "显示全部书签", "icon": "$(globe)" },
       { "command": "myBookmark.showCurrentWorkspaceScope", "title": "仅显示当前工作区书签", "icon": "$(filter-filled)" },
@@ -100,9 +101,10 @@
         { "command": "myBookmark.newFolder", "when": "view == myBookmark.tree", "group": "navigation@1" },
         { "command": "myBookmark.showAllScope", "when": "view == myBookmark.tree && myBookmark.scope == currentWorkspace", "group": "navigation@2" },
         { "command": "myBookmark.showCurrentWorkspaceScope", "when": "view == myBookmark.tree && myBookmark.scope == all", "group": "navigation@2" },
-        { "command": "myBookmark.repairTree", "when": "view == myBookmark.tree", "group": "1_maintenance@1" },
-        { "command": "myBookmark.rebalanceOrder", "when": "view == myBookmark.tree", "group": "1_maintenance@2" },
-        { "command": "myBookmark.reanchorAll", "when": "view == myBookmark.tree", "group": "1_maintenance@3" },
+        { "command": "myBookmark.chooseDataDirectory", "when": "view == myBookmark.tree", "group": "1_maintenance@1" },
+        { "command": "myBookmark.repairTree", "when": "view == myBookmark.tree", "group": "1_maintenance@2" },
+        { "command": "myBookmark.rebalanceOrder", "when": "view == myBookmark.tree", "group": "1_maintenance@3" },
+        { "command": "myBookmark.reanchorAll", "when": "view == myBookmark.tree", "group": "1_maintenance@4" },
         { "command": "myBookmark.removeAll", "when": "view == myBookmark.tree", "group": "9_danger@1" }
       ],
       "view/item/context": [
@@ -124,7 +126,7 @@
         "myBookmark.dataDirectory": {
           "type": "string",
           "default": "",
-          "markdownDescription": "书签数据的存放目录。留空使用系统默认的用户级共享目录；指向同步盘可在不启用设置同步的情况下跨设备共享。修改后需重新加载窗口。"
+          "markdownDescription": "书签数据的存放目录。留空使用系统默认的用户级共享目录；指向同步盘可在不启用设置同步的情况下跨设备共享。修改后需重新加载窗口。\n\n[点击选择文件夹…](command:myBookmark.chooseDataDirectory)"
         },
         "myBookmark.sync.enabled": {
           "type": "boolean",

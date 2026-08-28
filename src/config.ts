@@ -33,6 +33,10 @@ export async function updateScope(scope: BookmarkScope): Promise<void> {
   await vscode.workspace.getConfiguration(SECTION).update('scope', scope, vscode.ConfigurationTarget.Global);
 }
 
+export async function updateDataDirectory(directory: string): Promise<void> {
+  await vscode.workspace.getConfiguration(SECTION).update('dataDirectory', directory, vscode.ConfigurationTarget.Global);
+}
+
 export function onDidChangeConfig(listener: () => void): vscode.Disposable {
   return vscode.workspace.onDidChangeConfiguration((event) => {
     if (event.affectsConfiguration(SECTION)) listener();
