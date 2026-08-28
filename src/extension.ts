@@ -40,6 +40,11 @@ export function activate(context: vscode.ExtensionContext): void {
     canSelectMany: true,
   });
   treeView.message = '正在加载书签…';
+  const updateScopePresentation = (): void => {
+    treeView.description = config.scope === 'all' ? '全部书签' : '当前工作区';
+    void vscode.commands.executeCommand('setContext', 'myBookmark.scope', config.scope);
+  };
+  updateScopePresentation();
 
   context.subscriptions.push(
     output,
@@ -93,6 +98,7 @@ export function activate(context: vscode.ExtensionContext): void {
     onDidChangeConfig(() => {
       const previous = config;
       config = readConfig();
+      updateScopePresentation();
       decorations.setShowNote(config.showNoteInEditor);
       service.applyConfig(config);
 

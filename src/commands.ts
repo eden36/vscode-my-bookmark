@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type { BookmarkService } from './bookmark-service';
-import { readConfig, updateScope } from './config';
+import { readConfig, updateScope, type BookmarkScope } from './config';
 import { BOOKMARK_COLORS, type Bookmark, type BookmarkColor } from './core/model';
 import type { TreeNode } from './core/tree';
 import { bookmarkIcon, nodeId, type BookmarkTreeProvider } from './views/tree-provider';
@@ -37,6 +37,13 @@ export function registerCommands(
   const targets = (node: TreeNode | undefined, selection: readonly TreeNode[] | undefined): string[] => {
     const nodes = selection !== undefined && selection.length > 0 ? selection : node ? [node] : treeView.selection;
     return nodes.map(nodeId);
+  };
+
+  const setScope = async (scope: BookmarkScope): Promise<void> => {
+    await updateScope(scope);
+    void vscode.window.showInformationMessage(
+      scope === 'all' ? '显示全部工作区的书签。' : '仅显示当前工作区的书签。',
+    );
   };
 
   return [
@@ -206,9 +213,11 @@ export function registerCommands(
 
     register('myBookmark.toggleScope', async () => {
       const next = readConfig().scope === 'all' ? 'currentWorkspace' : 'all';
-      await updateScope(next);
-      void vscode.window.showInformationMessage(next === 'all' ? '显示全部工作区的书签。' : '仅显示当前工作区的书签。');
+      await setScope(next);
     }),
+
+    register('myBookmark.showAllScope', () => setScope('all')),
+    register('myBookmark.showCurrentWorkspaceScope', () => setScope('currentWorkspace')),
 
     register('myBookmark.reanchorAll', async () => {
       await vscode.window.withProgress(

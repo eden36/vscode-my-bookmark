@@ -2,7 +2,7 @@
   "name": "my-bookmark",
   "displayName": "My Bookmark",
   "description": "支持文件夹分组、自定义备注与手动排序的全局书签管理，跨工作区、跨 Profile、多窗口实时同步。",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "saltcoreyan",
   "license": "MIT",
   "repository": {
@@ -72,6 +72,8 @@
       { "command": "myBookmark.removeFromFile", "title": "My Bookmark: 清除当前文件的书签" },
       { "command": "myBookmark.removeAll", "title": "My Bookmark: 删除全部书签" },
       { "command": "myBookmark.toggleScope", "title": "切换显示范围", "icon": "$(filter)" },
+      { "command": "myBookmark.showAllScope", "title": "显示全部书签", "icon": "$(globe)" },
+      { "command": "myBookmark.showCurrentWorkspaceScope", "title": "仅显示当前工作区书签", "icon": "$(filter-filled)" },
       { "command": "myBookmark.reanchorAll", "title": "My Bookmark: 重新锚定全部书签" },
       { "command": "myBookmark.repairTree", "title": "My Bookmark: 清理孤立书签" },
       { "command": "myBookmark.rebalanceOrder", "title": "My Bookmark: 重排书签顺序" },
@@ -90,11 +92,14 @@
         { "command": "myBookmark.deleteFolder", "when": "false" },
         { "command": "myBookmark.moveUp", "when": "false" },
         { "command": "myBookmark.moveDown", "when": "false" },
-        { "command": "myBookmark.remove", "when": "false" }
+        { "command": "myBookmark.remove", "when": "false" },
+        { "command": "myBookmark.showAllScope", "when": "false" },
+        { "command": "myBookmark.showCurrentWorkspaceScope", "when": "false" }
       ],
       "view/title": [
         { "command": "myBookmark.newFolder", "when": "view == myBookmark.tree", "group": "navigation@1" },
-        { "command": "myBookmark.toggleScope", "when": "view == myBookmark.tree", "group": "navigation@2" },
+        { "command": "myBookmark.showAllScope", "when": "view == myBookmark.tree && myBookmark.scope == currentWorkspace", "group": "navigation@2" },
+        { "command": "myBookmark.showCurrentWorkspaceScope", "when": "view == myBookmark.tree && myBookmark.scope == all", "group": "navigation@2" },
         { "command": "myBookmark.repairTree", "when": "view == myBookmark.tree", "group": "1_maintenance@1" },
         { "command": "myBookmark.rebalanceOrder", "when": "view == myBookmark.tree", "group": "1_maintenance@2" },
         { "command": "myBookmark.reanchorAll", "when": "view == myBookmark.tree", "group": "1_maintenance@3" },
