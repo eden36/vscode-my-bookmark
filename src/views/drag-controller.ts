@@ -6,10 +6,10 @@ import { nodeId } from './tree-provider';
 const MIME_TYPE = 'application/vnd.code.tree.mybookmark.tree';
 
 /**
- * 拖拽只负责「移动到某个文件夹」。
+ * 书签或文件夹拖到书签上时，都会与其同级并排在其后。
  *
  * 原生树视图的 drop 只告诉你落在哪个节点上，没有「两项之间」的插入位置，也没有插入指示线，
- * 因此同级的精确调序交给 Alt+↑/↓ 命令，而不是猜测用户想插到目标的前面还是后面。
+ * 因此拖拽落到书签上固定解释为「排在其后」。
  */
 export class BookmarkDragController implements vscode.TreeDragAndDropController<TreeNode> {
   readonly dropMimeTypes = [MIME_TYPE];
@@ -27,13 +27,10 @@ export class BookmarkDragController implements vscode.TreeDragAndDropController<
   async handleDrop(target: TreeNode | undefined, dataTransfer: vscode.DataTransfer): Promise<void> {
     const ids = readIds(dataTransfer.get(MIME_TYPE)?.value);
     if (ids.length === 0) return;
-    // 落在书签上时按「移动到它所在的文件夹」处理——这是唯一没有歧义的解释。
-    const targetFolderId = target === undefined
-      ? undefined
-      : target.kind === 'folder' ? target.folder.id : target.bookmark.folderId;
 
     try {
-      await this.service.moveToFolder(ids, targetFolderId);
+      if (target?.kind === 'bookmark') await this.service.moveAfterBookmark(ids, target.bookmark.id);
+      else await this.service.moveToFolder(ids, target?.folder.id);
     } catch (error) {
       this.onError(error);
     }

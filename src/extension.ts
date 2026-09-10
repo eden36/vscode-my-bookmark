@@ -138,6 +138,20 @@ export function activate(context: vscode.ExtensionContext): void {
       if (document.uri.scheme !== 'file') return;
       void service.reanchorDocument(document).catch((error: unknown) => logError('重新锚定书签失败', error));
     }),
+    vscode.window.onDidChangeTextEditorSelection((event) => {
+      // 装订线装饰没有点击事件，只能从鼠标选中的行反查书签；键盘移动不应改变侧边栏选中项。
+      if (event.kind !== vscode.TextEditorSelectionChangeKind.Mouse) return;
+      // reveal 会主动显示不可见的视图；用户在编辑器中点击不应因此切走当前侧边栏。
+      if (!treeView.visible) return;
+      const line = event.textEditor.selection.active.line;
+      const bookmark = service.getBookmarksForDocument(event.textEditor.document.uri)
+        .find((item) => service.getLine(item) === line);
+      if (bookmark === undefined) return;
+      const node = provider.findNode(bookmark.id);
+      if (node === undefined) return;
+      void treeView.reveal(node, { expand: true, focus: false, select: true })
+        .then(undefined, (error: unknown) => logError('定位侧边栏书签失败', error));
+    }),
     vscode.window.onDidChangeVisibleTextEditors(() => decorations.refreshAll()),
   );
 
@@ -147,7 +161,11 @@ export function activate(context: vscode.ExtensionContext): void {
       treeView.message = service.isReadOnly() ? `书签数据当前只读：${error}` : undefined;
       return;
     }
-    treeView.message = service.getTree().length === 0 ? '尚未添加书签。' : undefined;
+    if (service.getTree().length === 0) {
+      treeView.message = config.scope === 'currentWorkspace' ? '当前工作区没有书签。' : '尚未添加书签。';
+      return;
+    }
+    treeView.message = undefined;
   }
 
   void (async () => {

@@ -36,8 +36,10 @@ vi.mock('vscode', () => {
 
 import * as vscode from 'vscode';
 import { BookmarkService } from '../src/bookmark-service';
+import { compareOrder } from '../src/core/order';
 import type { LineEdit } from '../src/core/tracker';
 import type { BookmarkMutation, SharedStateView, StorageService } from '../src/storage';
+import { bookmark, folder, resetFixtureCounter } from './fixtures';
 
 /** 只记录写入并把变更落回视图，不碰文件系统——本文件测的是应用层的决策，不是存储。 */
 class FakeStorage {
@@ -55,12 +57,15 @@ class FakeStorage {
     if (mutation === undefined) return;
     this.mutations.push(mutation);
     const bookmarks = new Map(this.view.bookmarks.map((item) => [item.id, item]));
+    const folders = new Map(this.view.folders.map((item) => [item.id, item]));
     for (const bookmark of mutation.upsertBookmarks ?? []) bookmarks.set(bookmark.id, bookmark);
+    for (const folder of mutation.upsertFolders ?? []) folders.set(folder.id, folder);
     for (const id of mutation.deleteBookmarks ?? []) bookmarks.delete(id);
+    for (const id of mutation.deleteFolders ?? []) folders.delete(id);
     const positions = new Map(this.view.positions);
     for (const entry of mutation.setPositions ?? []) positions.set(entry.id, entry.line);
     for (const id of mutation.deleteBookmarks ?? []) positions.delete(id);
-    this.view = { ...this.view, bookmarks: [...bookmarks.values()], positions };
+    this.view = { ...this.view, bookmarks: [...bookmarks.values()], folders: [...folders.values()], positions };
   }
 
   async updatePositions(entries: readonly { id: string; line: number }[]): Promise<void> {
@@ -74,6 +79,10 @@ function createService(): { service: BookmarkService; storage: FakeStorage } {
   return { service, storage };
 }
 
+function setWorkspaceFolders(folders: { name: string; uri: { fsPath: string } }[] | undefined): void {
+  (vscode.workspace as unknown as { workspaceFolders: typeof folders }).workspaceFolders = folders;
+}
+
 const uri = vscode.Uri.file('D:/proj/src/app.ts');
 const otherUri = vscode.Uri.file('D:/proj/src/other.ts');
 const lines = (...values: number[]): { line: number; lineText: string }[] => (
@@ -85,6 +94,8 @@ const insert = (startLine: number, count: number): LineEdit => (
 
 let context: ReturnType<typeof createService>;
 beforeEach(async () => {
+  resetFixtureCounter();
+  setWorkspaceFolders(undefined);
   context = createService();
   await context.service.initialize();
 });
@@ -160,6 +171,69 @@ describe('BookmarkService 多光标切换', () => {
 
     expect(result).toBe('none');
     expect(storage.mutations).toHaveLength(0);
+  });
+});
+
+describe('BookmarkService 拖拽排序', () => {
+  it('拖到书签上后排在目标书签之后', async () => {
+    const { service, storage } = context;
+    await service.toggleLines(uri, lines(1, 2, 3));
+    const [first, second, target] = service.getAllBookmarks();
+
+    await service.moveAfterBookmark([first!.id], target!.id);
+
+    const sorted = [...storage.view.bookmarks]
+      .sort((left, right) => compareOrder(left.order, right.order))
+      .map((item) => item.id);
+    expect(sorted).toEqual([second!.id, target!.id, first!.id]);
+  });
+
+  it('拖到自身时不产生写入', async () => {
+    const { service, storage } = context;
+    await service.toggleLines(uri, lines(1));
+    const bookmark = service.getAllBookmarks()[0]!;
+    const before = storage.mutations.length;
+
+    await service.moveAfterBookmark([bookmark.id], bookmark.id);
+
+    expect(storage.mutations).toHaveLength(before);
+  });
+
+  it('多选包含目标时仍移动其余书签', async () => {
+    const { service, storage } = context;
+    await service.toggleLines(uri, lines(1, 2, 3));
+    const [first, second, target] = service.getAllBookmarks();
+
+    await service.moveAfterBookmark([first!.id, target!.id], target!.id);
+
+    const sorted = [...storage.view.bookmarks]
+      .sort((left, right) => compareOrder(left.order, right.order))
+      .map((item) => item.id);
+    expect(sorted).toEqual([second!.id, target!.id, first!.id]);
+  });
+
+  it('文件夹拖到书签上时排在该书签之后', async () => {
+    const { service, storage } = context;
+    storage.view = {
+      bookmarks: [
+        bookmark({ id: 'target', folderId: 'destination', order: 'a1' }),
+        bookmark({ id: 'following', folderId: 'destination', order: 'a3' }),
+      ],
+      folders: [
+        folder({ id: 'destination', order: 'a1' }),
+        folder({ id: 'source', order: 'a2' }),
+      ],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+
+    await service.moveAfterBookmark(['source'], 'target');
+
+    const source = storage.view.folders.find((item) => item.id === 'source')!;
+    expect(source.parentId).toBe('destination');
+    expect(compareOrder(source.order, 'a1')).toBeGreaterThan(0);
+    expect(compareOrder(source.order, 'a3')).toBeLessThan(0);
   });
 });
 
@@ -239,6 +313,46 @@ describe('BookmarkService 全部书签', () => {
     service.getAllBookmarks().length = 0;
 
     expect(service.getAllBookmarks()).toHaveLength(1);
+  });
+});
+
+describe('BookmarkService 工作区范围', () => {
+  it('只保留包含当前工作区书签的目录及其父目录', () => {
+    const { service, storage } = context;
+    setWorkspaceFolders([{ name: '当前项目', uri: vscode.Uri.file('D:/current') }]);
+    storage.view = {
+      bookmarks: [
+        bookmark({
+          id: 'current-bookmark',
+          location: { kind: 'workspace', folderName: '当前项目', relativePath: 'src/app.ts' },
+          folderId: 'current-child',
+          order: 'a1',
+        }),
+        bookmark({
+          id: 'other-bookmark',
+          location: { kind: 'workspace', folderName: '其他项目', relativePath: 'src/app.ts' },
+          folderId: 'other-child',
+          order: 'a1',
+        }),
+      ],
+      folders: [
+        folder({ id: 'current-parent', name: '当前父目录', order: 'a1' }),
+        folder({ id: 'current-child', name: '当前子目录', parentId: 'current-parent', order: 'a1' }),
+        folder({ id: 'other-parent', name: '其他父目录', order: 'a2' }),
+        folder({ id: 'other-child', name: '其他子目录', parentId: 'other-parent', order: 'a1' }),
+        folder({ id: 'empty', name: '空目录', order: 'a3' }),
+      ],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+
+    const root = service.getTree()[0]!;
+    expect(root.kind).toBe('folder');
+    if (root.kind !== 'folder') return;
+    expect(root.folder.id).toBe('current-parent');
+    expect(root.children).toHaveLength(1);
+    expect(root.children[0]).toMatchObject({ kind: 'folder', folder: { id: 'current-child' } });
   });
 });
 

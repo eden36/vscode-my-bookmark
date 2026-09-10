@@ -86,8 +86,7 @@ export class BookmarkService implements vscode.Disposable {
       : this.view.bookmarks.filter((item) => belongsToWorkspace(item.location, workspaceFolders()));
     const result = buildTree({
       bookmarks: visible,
-      // 文件夹是用户建立的组织结构，即使当前范围内没有书签也要显示，否则切换范围时目录会忽隐忽现。
-      folders: this.view.folders,
+      folders: this.foldersForVisibleBookmarks(visible),
       deletedFolderIds: this.view.deletedFolderIds,
     });
     this.diagnostics = result.diagnostics;
@@ -403,6 +402,51 @@ export class BookmarkService implements vscode.Disposable {
     });
   }
 
+  /** 拖到另一条书签上时，所有项目与其同级，并排在其后。 */
+  async moveAfterBookmark(ids: readonly string[], targetId: string): Promise<void> {
+    await this.apply((view) => {
+      const target = view.bookmarks.find((item) => item.id === targetId);
+      if (target === undefined) return undefined;
+
+      const seen = new Set<string>();
+      const moved: ({ kind: 'bookmark'; item: Bookmark } | { kind: 'folder'; item: BookmarkFolder })[] = [];
+      for (const id of ids) {
+        if (id === targetId || seen.has(id)) continue;
+        seen.add(id);
+        const bookmark = view.bookmarks.find((item) => item.id === id);
+        if (bookmark !== undefined) {
+          moved.push({ kind: 'bookmark', item: bookmark });
+          continue;
+        }
+        const folder = view.folders.find((item) => item.id === id);
+        if (folder === undefined) continue;
+        // 目标书签在该文件夹内时，重新归属会形成环，必须与移动到文件夹时保持相同保护。
+        if (target.folderId !== undefined && isSelfOrDescendant(view.folders, folder.id, target.folderId)) continue;
+        moved.push({ kind: 'folder', item: folder });
+      }
+      if (moved.length === 0) return undefined;
+
+      const movedIds = new Set(moved.map((entry) => entry.item.id));
+      const siblings = this.sortedSiblings(target.folderId, view).filter((item) => !movedIds.has(item.id));
+      const targetIndex = siblings.findIndex((item) => item.id === target.id);
+      if (targetIndex < 0) return undefined;
+      // 并发插入可能与目标拥有相同 order；此时只能排在该 order 的整组之后，不能生成无效区间。
+      const next = siblings.slice(targetIndex + 1).find((item) => compareOrder(item.order, target.order) > 0);
+      const orders = betweenMany(target.order, next?.order, moved.length);
+      const upsertBookmarks: Bookmark[] = [];
+      const upsertFolders: BookmarkFolder[] = [];
+      moved.forEach((entry, index) => {
+        const order = orders[index]!;
+        if (entry.kind === 'bookmark') upsertBookmarks.push({ ...reparentBookmark(entry.item, target.folderId), order });
+        else upsertFolders.push({ ...reparentFolder(entry.item, target.folderId), order });
+      });
+      return {
+        upsertBookmarks,
+        upsertFolders,
+      };
+    });
+  }
+
   /** 同级上移或下移一位。原生树视图没有插入指示线，精确调序只能靠命令完成。 */
   async moveBy(id: string, offset: -1 | 1): Promise<void> {
     await this.apply((view) => {
@@ -544,6 +588,26 @@ export class BookmarkService implements vscode.Disposable {
   private appendOrder(parentId: string | undefined, view: SharedStateView = this.view): string {
     const siblings = this.sortedSiblings(parentId, view);
     return between(siblings[siblings.length - 1]?.order, undefined);
+  }
+
+  /** 当前工作区下，文件夹只能通过其包含的可见书签推导，空文件夹没有可用的工作区归属。 */
+  private foldersForVisibleBookmarks(bookmarks: readonly Bookmark[]): BookmarkFolder[] {
+    if (this.config.scope === 'all') return this.view.folders;
+
+    const byId = new Map(this.view.folders.map((folder) => [folder.id, folder]));
+    const included = new Set<string>();
+    for (const bookmark of bookmarks) {
+      const visited = new Set<string>();
+      let folderId = bookmark.folderId;
+      while (folderId !== undefined && !visited.has(folderId)) {
+        visited.add(folderId);
+        const folder = byId.get(folderId);
+        if (folder === undefined) break;
+        included.add(folder.id);
+        folderId = folder.parentId;
+      }
+    }
+    return this.view.folders.filter((folder) => included.has(folder.id));
   }
 
   private sortedSiblings(parentId: string | undefined, view: SharedStateView = this.view): { id: string; order: string }[] {

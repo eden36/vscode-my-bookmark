@@ -81,9 +81,7 @@
       { "command": "myBookmark.showLogs", "title": "My Bookmark: 显示日志" }
     ],
     "keybindings": [
-      { "command": "myBookmark.toggle", "key": "ctrl+alt+k", "mac": "cmd+alt+k", "when": "editorTextFocus" },
-      { "command": "myBookmark.moveUp", "key": "alt+up", "when": "focusedView == myBookmark.tree" },
-      { "command": "myBookmark.moveDown", "key": "alt+down", "when": "focusedView == myBookmark.tree" }
+      { "command": "myBookmark.toggle", "key": "ctrl+alt+k", "mac": "cmd+alt+k", "when": "editorTextFocus" }
     ],
     "menus": {
       "commandPalette": [
