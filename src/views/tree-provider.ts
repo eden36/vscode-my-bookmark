@@ -25,6 +25,7 @@ export class BookmarkTreeProvider implements vscode.TreeDataProvider<TreeNode> {
   }
 
   getTreeItem(element: TreeNode): vscode.TreeItem {
+    if (element.kind === 'workspace') return this.workspaceItem(element);
     return element.kind === 'folder' ? this.folderItem(element.folder) : this.bookmarkItem(element.bookmark);
   }
 
@@ -36,7 +37,7 @@ export class BookmarkTreeProvider implements vscode.TreeDataProvider<TreeNode> {
       this.index(this.roots, undefined);
       return this.roots;
     }
-    return element.kind === 'folder' ? element.children : [];
+    return element.kind === 'bookmark' ? [] : element.children;
   }
 
   getParent(element: TreeNode): TreeNode | undefined {
@@ -48,8 +49,17 @@ export class BookmarkTreeProvider implements vscode.TreeDataProvider<TreeNode> {
       const id = nodeId(node);
       this.nodes.set(id, node);
       if (parent !== undefined) this.parents.set(id, parent);
-      if (node.kind === 'folder') this.index(node.children, node);
+      if (node.kind !== 'bookmark') this.index(node.children, node);
     }
+  }
+
+  /** 工作区分组节点不对应任何记录，不能拖拽、重命名或删除，只支持在其下新建文件夹。 */
+  private workspaceItem(node: Extract<TreeNode, { kind: 'workspace' }>): vscode.TreeItem {
+    const item = new vscode.TreeItem(node.workspace ?? '工作区外', vscode.TreeItemCollapsibleState.Expanded);
+    item.id = nodeId(node);
+    item.contextValue = 'workspaceGroup';
+    item.iconPath = new vscode.ThemeIcon('root-folder');
+    return item;
   }
 
   private folderItem(folder: BookmarkFolder): vscode.TreeItem {
@@ -102,7 +112,9 @@ export class BookmarkTreeProvider implements vscode.TreeDataProvider<TreeNode> {
   }
 }
 
+/** 工作区分组节点没有真实记录 id，用固定前缀合成一个——真实的书签/文件夹 id 都是 UUID，不会与之冲突。 */
 export function nodeId(node: TreeNode): string {
+  if (node.kind === 'workspace') return `workspace:${node.workspace ?? ''}`;
   return node.kind === 'folder' ? node.folder.id : node.bookmark.id;
 }
 

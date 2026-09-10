@@ -23,6 +23,7 @@ export function folder(overrides: Partial<BookmarkFolder> = {}): BookmarkFolder 
   return {
     id: `folder-${counter}`,
     name: `分组 ${counter}`,
+    workspace: 'demo',
     order: 'a0',
     createdAt: 1_700_000_000_000,
     ...overrides,

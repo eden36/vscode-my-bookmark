@@ -5,10 +5,11 @@ import { between, betweenMany, compareOrder, ORDER_REBALANCE_THRESHOLD } from '.
 import { belongsToWorkspace, resolveLocation, toLocation, type WorkspaceFolderInfo } from './core/resolver';
 import { applyLineEdits, reanchor, type LineEdit } from './core/tracker';
 import {
-  buildTree,
   compareNodes,
+  groupByWorkspace,
   isSelfOrDescendant,
   sortTree,
+  type ContentNode,
   type TreeDiagnostics,
   type TreeNode,
 } from './core/tree';
@@ -81,17 +82,32 @@ export class BookmarkService implements vscode.Disposable {
   // ---------------------------------------------------------------- 读取
 
   getTree(): TreeNode[] {
-    const visible = this.config.scope === 'all'
+    const openNames = workspaceFolders().map((item) => item.name);
+    const visibleBookmarks = this.config.scope === 'all'
       ? this.view.bookmarks
       : this.view.bookmarks.filter((item) => belongsToWorkspace(item.location, workspaceFolders()));
-    const result = buildTree({
-      bookmarks: visible,
-      folders: this.foldersForVisibleBookmarks(visible),
+    const visibleFolders = this.config.scope === 'all'
+      ? this.view.folders
+      : this.view.folders.filter((folder) => openNames.includes(folder.workspace));
+    const grouped = groupByWorkspace({
+      bookmarks: visibleBookmarks,
+      folders: visibleFolders,
       deletedFolderIds: this.view.deletedFolderIds,
+      openWorkspaceOrder: openNames,
     });
-    this.diagnostics = result.diagnostics;
+    this.diagnostics = grouped.diagnostics;
+
     const comparator = this.comparatorFor(this.config.sortMode);
-    return comparator === undefined ? result.roots : sortTree(result.roots, comparator);
+    // 只打开一个工作区时不必显示分组节点；多个工作区、或「全部」范围下才需要区分来源。
+    if (this.config.scope !== 'all' && grouped.groups.length <= 1) {
+      const children = grouped.groups[0]?.children ?? [];
+      return comparator === undefined ? children : sortTree(children, comparator);
+    }
+    // 分组节点本身不参与手动或其他排序模式，顺序固定为「已打开的工作区 → 其余工作区 → 工作区外」。
+    return grouped.groups.map((group) => ({
+      ...group,
+      children: comparator === undefined ? group.children : sortTree(group.children, comparator),
+    }));
   }
 
   /**
@@ -256,7 +272,7 @@ export class BookmarkService implements vscode.Disposable {
     const location = toLocation(uri.fsPath, workspaceFolders(), { caseSensitive: process.platform === 'linux' });
     const createdAt = Date.now();
     // id 与排序键必须在 build 之外算好：build 会被调用两次，内部生成随机值会让两次结果不一致。
-    let order = this.appendOrder(undefined);
+    let order = this.appendOrder(undefined, location.kind === 'workspace' ? location.folderName : undefined);
     const created = absent.map((entry) => {
       const bookmark: Bookmark = {
         id: randomUUID(),
@@ -307,12 +323,14 @@ export class BookmarkService implements vscode.Disposable {
     });
   }
 
-  async createFolder(name: string, parentId: string | undefined): Promise<BookmarkFolder> {
+  /** `workspace` 由调用方给定：文件夹上新建继承父文件夹的工作区，标题栏新建则由命令层解析。 */
+  async createFolder(name: string, parentId: string | undefined, workspace: string): Promise<BookmarkFolder> {
     const created: BookmarkFolder = {
       id: randomUUID(),
       name,
+      workspace,
       ...(parentId === undefined ? {} : { parentId }),
-      order: this.appendOrder(parentId),
+      order: this.appendOrder(parentId, workspace),
       createdAt: Date.now(),
     };
     await this.apply(() => ({ upsertFolders: [created] }));
@@ -377,26 +395,47 @@ export class BookmarkService implements vscode.Disposable {
     }));
   }
 
-  /** 拖拽移动到某个文件夹。目标为 undefined 表示移到根级。 */
-  async moveToFolder(ids: readonly string[], targetFolderId: string | undefined): Promise<void> {
+  /**
+   * 拖拽移动到某个文件夹，或移到某个工作区的根级（`targetFolderId` 为 undefined 时）。
+   *
+   * `workspace` 由调用方给出（目标文件夹或目标分组节点自身的工作区）：选中项里工作区不匹配的，
+   * 整体拒绝并抛出错误，而不是悄悄跳过——用户需要明确知道这次拖放没有生效。
+   */
+  async moveToFolder(ids: readonly string[], targetFolderId: string | undefined, workspace: string | undefined): Promise<void> {
     await this.apply((view) => {
-      const upsertBookmarks: Bookmark[] = [];
-      const upsertFolders: BookmarkFolder[] = [];
-      let order = this.appendOrder(targetFolderId, view);
+      if (targetFolderId !== undefined && !view.folders.some((item) => item.id === targetFolderId)) return undefined;
+      const moved = this.collectMovable(view, ids, workspace, targetFolderId, targetFolderId);
+      if (moved.length === 0) return undefined;
+      return this.materializeMove(moved, this.appendOrder(targetFolderId, workspace, view), targetFolderId);
+    });
+  }
+
+  /** 拖到空白处：每个项目回到自己所属工作区的根级，互不影响彼此的排序区间。 */
+  async moveToOwnRoot(ids: readonly string[]): Promise<void> {
+    await this.apply((view) => {
+      const groups = new Map<string | undefined, MovableEntry[]>();
+      const pushTo = (workspace: string | undefined, entry: MovableEntry): void => {
+        const list = groups.get(workspace);
+        if (list === undefined) groups.set(workspace, [entry]);
+        else list.push(entry);
+      };
       for (const id of ids) {
-        if (id === targetFolderId) continue;
         const bookmark = view.bookmarks.find((item) => item.id === id);
         if (bookmark !== undefined) {
-          upsertBookmarks.push({ ...reparentBookmark(bookmark, targetFolderId), order });
-          order = between(order, undefined);
+          if (bookmark.folderId !== undefined) pushTo(workspaceOfBookmark(bookmark), { kind: 'bookmark', item: bookmark });
           continue;
         }
         const folder = view.folders.find((item) => item.id === id);
-        // 移到自己的后代下会形成环；这类拖放必须直接拒绝，而不是靠渲染层去兜。
-        if (folder === undefined) continue;
-        if (targetFolderId !== undefined && isSelfOrDescendant(view.folders, folder.id, targetFolderId)) continue;
-        upsertFolders.push({ ...reparentFolder(folder, targetFolderId), order });
-        order = between(order, undefined);
+        if (folder !== undefined && folder.parentId !== undefined) pushTo(folder.workspace, { kind: 'folder', item: folder });
+      }
+      if (groups.size === 0) return undefined;
+
+      const upsertBookmarks: Bookmark[] = [];
+      const upsertFolders: BookmarkFolder[] = [];
+      for (const [workspace, entries] of groups) {
+        const result = this.materializeMove(entries, this.appendOrder(undefined, workspace, view), undefined);
+        upsertBookmarks.push(...result.upsertBookmarks);
+        upsertFolders.push(...result.upsertFolders);
       }
       return { upsertBookmarks, upsertFolders };
     });
@@ -407,27 +446,14 @@ export class BookmarkService implements vscode.Disposable {
     await this.apply((view) => {
       const target = view.bookmarks.find((item) => item.id === targetId);
       if (target === undefined) return undefined;
+      const workspace = workspaceOfBookmark(target);
 
-      const seen = new Set<string>();
-      const moved: ({ kind: 'bookmark'; item: Bookmark } | { kind: 'folder'; item: BookmarkFolder })[] = [];
-      for (const id of ids) {
-        if (id === targetId || seen.has(id)) continue;
-        seen.add(id);
-        const bookmark = view.bookmarks.find((item) => item.id === id);
-        if (bookmark !== undefined) {
-          moved.push({ kind: 'bookmark', item: bookmark });
-          continue;
-        }
-        const folder = view.folders.find((item) => item.id === id);
-        if (folder === undefined) continue;
-        // 目标书签在该文件夹内时，重新归属会形成环，必须与移动到文件夹时保持相同保护。
-        if (target.folderId !== undefined && isSelfOrDescendant(view.folders, folder.id, target.folderId)) continue;
-        moved.push({ kind: 'folder', item: folder });
-      }
+      const moved = this.collectMovable(view, ids, workspace, targetId, target.folderId);
       if (moved.length === 0) return undefined;
+      moved.sort(byOriginalOrder);
 
       const movedIds = new Set(moved.map((entry) => entry.item.id));
-      const siblings = this.sortedSiblings(target.folderId, view).filter((item) => !movedIds.has(item.id));
+      const siblings = this.sortedSiblings(target.folderId, workspace, view).filter((item) => !movedIds.has(item.id));
       const targetIndex = siblings.findIndex((item) => item.id === target.id);
       if (targetIndex < 0) return undefined;
       // 并发插入可能与目标拥有相同 order；此时只能排在该 order 的整组之后，不能生成无效区间。
@@ -451,7 +477,8 @@ export class BookmarkService implements vscode.Disposable {
   async moveBy(id: string, offset: -1 | 1): Promise<void> {
     await this.apply((view) => {
       const parentId = this.parentOf(id, view);
-      const siblings = this.sortedSiblings(parentId, view);
+      const workspace = this.workspaceOf(id, view);
+      const siblings = this.sortedSiblings(parentId, workspace, view);
       const index = siblings.findIndex((item) => item.id === id);
       const targetIndex = index + offset;
       if (index < 0 || targetIndex < 0 || targetIndex >= siblings.length) return undefined;
@@ -485,15 +512,16 @@ export class BookmarkService implements vscode.Disposable {
   async rebalanceOrder(): Promise<number> {
     let rebalanced = 0;
     await this.apply((view) => {
-      const parents = new Set<string | undefined>([undefined]);
-      for (const folder of view.folders) parents.add(folder.id);
+      // 不同工作区的根级项目分属不同的兄弟组，不能用同一批排序键覆盖，需要按工作区拆开。
+      const rootWorkspaces = new Set<string | undefined>();
+      for (const bookmark of view.bookmarks) if (bookmark.folderId === undefined) rootWorkspaces.add(workspaceOfBookmark(bookmark));
 
       const upsertBookmarks: Bookmark[] = [];
       const upsertFolders: BookmarkFolder[] = [];
-      for (const parentId of parents) {
-        const siblings = this.sortedSiblings(parentId, view);
-        if (siblings.length < 2) continue;
-        if (Math.max(...siblings.map((item) => item.order.length)) <= ORDER_REBALANCE_THRESHOLD) continue;
+      const rebalanceGroup = (parentId: string | undefined, workspace: string | undefined): void => {
+        const siblings = this.sortedSiblings(parentId, workspace, view);
+        if (siblings.length < 2) return;
+        if (Math.max(...siblings.map((item) => item.order.length)) <= ORDER_REBALANCE_THRESHOLD) return;
         const orders = betweenMany(undefined, undefined, siblings.length);
         siblings.forEach((sibling, index) => {
           const order = orders[index]!;
@@ -505,7 +533,13 @@ export class BookmarkService implements vscode.Disposable {
           }
         });
         rebalanced += siblings.length;
+      };
+
+      for (const folder of view.folders) {
+        rebalanceGroup(folder.id, folder.workspace);
+        if (folder.parentId === undefined) rootWorkspaces.add(folder.workspace);
       }
+      for (const workspace of rootWorkspaces) rebalanceGroup(undefined, workspace);
       return rebalanced === 0 ? undefined : { upsertBookmarks, upsertFolders };
     });
     return rebalanced;
@@ -585,35 +619,82 @@ export class BookmarkService implements vscode.Disposable {
     return this.uriIndex;
   }
 
-  private appendOrder(parentId: string | undefined, view: SharedStateView = this.view): string {
-    const siblings = this.sortedSiblings(parentId, view);
+  private appendOrder(parentId: string | undefined, workspace: string | undefined, view: SharedStateView = this.view): string {
+    const siblings = this.sortedSiblings(parentId, workspace, view);
     return between(siblings[siblings.length - 1]?.order, undefined);
   }
 
-  /** 当前工作区下，文件夹只能通过其包含的可见书签推导，空文件夹没有可用的工作区归属。 */
-  private foldersForVisibleBookmarks(bookmarks: readonly Bookmark[]): BookmarkFolder[] {
-    if (this.config.scope === 'all') return this.view.folders;
-
-    const byId = new Map(this.view.folders.map((folder) => [folder.id, folder]));
-    const included = new Set<string>();
-    for (const bookmark of bookmarks) {
-      const visited = new Set<string>();
-      let folderId = bookmark.folderId;
-      while (folderId !== undefined && !visited.has(folderId)) {
-        visited.add(folderId);
-        const folder = byId.get(folderId);
-        if (folder === undefined) break;
-        included.add(folder.id);
-        folderId = folder.parentId;
+  /**
+   * 收集可移动到给定工作区（及给定文件夹，用于防环）下的项目。
+   *
+   * 工作区不匹配的项目会整体拒绝（抛出错误）而不是悄悄跳过：拖放是用户的主动操作，
+   * 静默丢弃一部分选中项会让人以为移动成功了。`excludeId` 排除目标自身（文件夹或书签），
+   * `cycleCheckParentId` 是防环检查的目标文件夹——两者在移到文件夹时相同，移到书签之后时不同。
+   */
+  private collectMovable(
+    view: SharedStateView,
+    ids: readonly string[],
+    workspace: string | undefined,
+    excludeId: string | undefined,
+    cycleCheckParentId: string | undefined,
+  ): MovableEntry[] {
+    const seen = new Set<string>();
+    const moved: MovableEntry[] = [];
+    for (const id of ids) {
+      if (id === excludeId || seen.has(id)) continue;
+      seen.add(id);
+      // external 书签没有工作区（undefined），目标是「工作区外」分组时 workspace 同为 undefined，
+      // 两者相等即为匹配；文件夹的 workspace 恒为真实字符串，永远无法匹配 undefined 分组。
+      const bookmark = view.bookmarks.find((item) => item.id === id);
+      if (bookmark !== undefined) {
+        if (workspaceOfBookmark(bookmark) !== workspace) throw new Error('不能移动到其他工作区');
+        moved.push({ kind: 'bookmark', item: bookmark });
+        continue;
       }
+      const folder = view.folders.find((item) => item.id === id);
+      if (folder === undefined) continue;
+      if (folder.workspace !== workspace) throw new Error('不能移动到其他工作区');
+      // 移到自己的后代下会形成环；这类拖放必须直接拒绝，而不是靠渲染层去兜。
+      if (cycleCheckParentId !== undefined && isSelfOrDescendant(view.folders, folder.id, cycleCheckParentId)) continue;
+      moved.push({ kind: 'folder', item: folder });
     }
-    return this.view.folders.filter((folder) => included.has(folder.id));
+    return moved;
   }
 
-  private sortedSiblings(parentId: string | undefined, view: SharedStateView = this.view): { id: string; order: string }[] {
+  /** 按原有顺序（而非选中顺序）依次追加到 `parentId` 末尾，供 `moveToFolder`/`moveToOwnRoot` 复用。 */
+  private materializeMove(
+    entries: MovableEntry[],
+    startOrder: string,
+    parentId: string | undefined,
+  ): { upsertBookmarks: Bookmark[]; upsertFolders: BookmarkFolder[] } {
+    const sorted = [...entries].sort(byOriginalOrder);
+    let order = startOrder;
+    const upsertBookmarks: Bookmark[] = [];
+    const upsertFolders: BookmarkFolder[] = [];
+    for (const entry of sorted) {
+      if (entry.kind === 'bookmark') upsertBookmarks.push({ ...reparentBookmark(entry.item, parentId), order });
+      else upsertFolders.push({ ...reparentFolder(entry.item, parentId), order });
+      order = between(order, undefined);
+    }
+    return { upsertBookmarks, upsertFolders };
+  }
+
+  /**
+   * 同级项目列表，用于插入排序键或调序。
+   *
+   * 正常数据下，非根级子项的工作区必然与父文件夹一致，根级的书签与文件夹则可能分属不同工作区。
+   * 但这里始终按 `workspace` 精确匹配，而不是信任「同 parentId 就同工作区」这个不变式——
+   * 树构建（`core/tree.ts`）对悬空引用、环这些结构性损坏都是读取时兜底，这里保持同样的谨慎：
+   * 跨设备同步产生的损坏数据一旦打破该不变式，也不该把不同工作区的项目当作兄弟处理。
+   */
+  private sortedSiblings(
+    parentId: string | undefined,
+    workspace: string | undefined,
+    view: SharedStateView = this.view,
+  ): { id: string; order: string }[] {
     const siblings = [
-      ...view.folders.filter((item) => item.parentId === parentId),
-      ...view.bookmarks.filter((item) => item.folderId === parentId),
+      ...view.folders.filter((item) => item.parentId === parentId && item.workspace === workspace),
+      ...view.bookmarks.filter((item) => item.folderId === parentId && workspaceOfBookmark(item) === workspace),
     ].map((item) => ({ id: item.id, order: item.order }));
     return siblings.sort((left, right) => {
       const byOrder = compareOrder(left.order, right.order);
@@ -626,10 +707,16 @@ export class BookmarkService implements vscode.Disposable {
       ?? view.folders.find((item) => item.id === id)?.parentId;
   }
 
-  private comparatorFor(mode: SortMode): ((left: TreeNode, right: TreeNode) => number) | undefined {
+  private workspaceOf(id: string, view: SharedStateView): string | undefined {
+    const bookmark = view.bookmarks.find((item) => item.id === id);
+    if (bookmark !== undefined) return workspaceOfBookmark(bookmark);
+    return view.folders.find((item) => item.id === id)?.workspace;
+  }
+
+  private comparatorFor(mode: SortMode): ((left: ContentNode, right: ContentNode) => number) | undefined {
     if (mode === 'manual') return undefined;
     // 非手动模式下仍以 compareNodes 兜底，保证同一排序值的项在各设备上顺序一致。
-    const keyOf = (node: TreeNode): string => {
+    const keyOf = (node: ContentNode): string => {
       if (node.kind === 'folder') return node.folder.name;
       if (mode === 'note') return node.bookmark.note ?? '';
       if (mode === 'created') return String(node.bookmark.createdAt).padStart(16, '0');
@@ -670,6 +757,20 @@ function withColor<T extends { color?: BookmarkColor }>(item: T, color: Bookmark
   if (color === undefined) delete next.color;
   else next.color = color;
   return next;
+}
+
+/** 拖拽移动时统一处理的候选项，书签与文件夹共用同一套排序键分配逻辑。 */
+type MovableEntry = { kind: 'bookmark'; item: Bookmark } | { kind: 'folder'; item: BookmarkFolder };
+
+/** 按原有顺序而非选中顺序裁决，多选拖拽不应打乱相对次序。 */
+function byOriginalOrder(left: MovableEntry, right: MovableEntry): number {
+  const byOrder = compareOrder(left.item.order, right.item.order);
+  return byOrder !== 0 ? byOrder : left.item.id < right.item.id ? -1 : 1;
+}
+
+/** 书签所属的工作区；`external` 书签没有工作区，返回 undefined。 */
+function workspaceOfBookmark(bookmark: Bookmark): string | undefined {
+  return bookmark.location.kind === 'workspace' ? bookmark.location.folderName : undefined;
 }
 
 function reparentBookmark(bookmark: Bookmark, folderId: string | undefined): Bookmark {

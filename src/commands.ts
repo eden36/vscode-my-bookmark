@@ -134,10 +134,12 @@ export function registerCommands(
     }),
 
     register('myBookmark.newFolder', async (node?: TreeNode) => {
+      const workspace = await resolveWorkspaceForNewFolder(node);
+      if (workspace === undefined) return;
       const name = await vscode.window.showInputBox({ title: '新建文件夹', prompt: '文件夹名称' });
       if (name === undefined || name.trim().length === 0) return;
       const parentId = node?.kind === 'folder' ? node.folder.id : undefined;
-      const created = await service.createFolder(name.trim(), parentId);
+      const created = await service.createFolder(name.trim(), parentId, workspace);
       const target = provider.findNode(created.id);
       if (target !== undefined) await treeView.reveal(target, { focus: true });
     }),
@@ -323,6 +325,35 @@ function currentLine(editor: vscode.TextEditor): { line: number; lineText: strin
   return { line, lineText: editor.document.lineAt(line).text };
 }
 
+/**
+ * 新建文件夹要落在哪个工作区。
+ *
+ * 在文件夹或工作区分组节点上新建时直接继承；从标题栏按钮新建（不带节点）时，
+ * 只有一个根就直接用它，多个根弹出选择，没有打开工作区则明确提示而不是静默失败。
+ */
+async function resolveWorkspaceForNewFolder(node: TreeNode | undefined): Promise<string | undefined> {
+  if (node?.kind === 'folder') return node.folder.workspace;
+  if (node?.kind === 'workspace') {
+    if (node.workspace === undefined) {
+      void vscode.window.showErrorMessage('工作区外的书签不支持文件夹分组。');
+      return undefined;
+    }
+    return node.workspace;
+  }
+  const folders = vscode.workspace.workspaceFolders ?? [];
+  if (folders.length === 0) {
+    void vscode.window.showErrorMessage('当前未打开工作区，无法新建文件夹。');
+    return undefined;
+  }
+  if (folders.length === 1) return folders[0]!.name;
+  const picked = await vscode.window.showQuickPick(
+    folders.map((folder) => ({ label: folder.name, name: folder.name })),
+    { title: '选择新建文件夹所属的工作区' },
+  );
+  return picked?.name;
+}
+
+/** 文件夹与工作区分组节点都以 children 承载子树，只有书签节点没有子节点。 */
 function countBookmarksUnder(service: BookmarkService, folderId: string): number {
   const walk = (nodes: readonly TreeNode[]): number => nodes.reduce(
     (total, node) => total + (node.kind === 'bookmark' ? 1 : walk(node.children)),
@@ -330,8 +361,8 @@ function countBookmarksUnder(service: BookmarkService, folderId: string): number
   );
   const find = (nodes: readonly TreeNode[]): TreeNode | undefined => {
     for (const node of nodes) {
-      if (node.kind !== 'folder') continue;
-      if (node.folder.id === folderId) return node;
+      if (node.kind === 'bookmark') continue;
+      if (node.kind === 'folder' && node.folder.id === folderId) return node;
       const found = find(node.children);
       if (found !== undefined) return found;
     }

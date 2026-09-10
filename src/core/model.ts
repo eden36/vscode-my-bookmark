@@ -34,6 +34,13 @@ export interface Bookmark {
 export interface BookmarkFolder {
   id: string;
   name: string;
+  /**
+   * 所属工作区，取值与 `BookmarkLocation.workspace` 场景下的 `folderName` 一致。
+   *
+   * 文件夹只能属于某一个工作区：书签只能放进同工作区的文件夹，子文件夹必须与父文件夹同工作区。
+   * 工作区之外的书签（`external`）没有稳定的工作区标识，因此不支持分组，只能停在根级。
+   */
+  workspace: string;
   parentId?: string;
   color?: BookmarkColor;
   order: string;
@@ -83,6 +90,7 @@ export function isBookmarkFolder(value: unknown): value is BookmarkFolder {
   return isObject(value)
     && typeof value.id === 'string' && value.id.length > 0
     && typeof value.name === 'string' && value.name.length > 0
+    && typeof value.workspace === 'string' && value.workspace.length > 0
     && (value.parentId === undefined || (typeof value.parentId === 'string' && value.parentId.length > 0))
     && (value.color === undefined || isBookmarkColor(value.color))
     && isValidOrderKey(value.order)

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buildTree, isSelfOrDescendant, MAX_TREE_DEPTH, type TreeNode } from '../src/core/tree';
+import { buildTree, groupByWorkspace, isSelfOrDescendant, MAX_TREE_DEPTH, type ContentNode } from '../src/core/tree';
 import { bookmark, folder, resetFixtureCounter } from './fixtures';
 
 beforeEach(() => resetFixtureCounter());
@@ -172,18 +172,64 @@ describe('移动校验', () => {
   });
 });
 
-function idOf(node: TreeNode): string {
+describe('按工作区分组', () => {
+  it('文件夹按自身的 workspace 归组，与是否有书签无关', () => {
+    const empty = folder({ id: 'f1', workspace: 'a', name: '空目录' });
+
+    const { groups } = groupByWorkspace({ bookmarks: [], folders: [empty], openWorkspaceOrder: [] });
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({ kind: 'workspace', workspace: 'a' });
+    expect(groups[0]!.children.map(idOf)).toEqual(['f1']);
+  });
+
+  it('external 书签单独归入 undefined 分组，排在最后', () => {
+    const inWorkspace = bookmark({ id: 'b1', location: { kind: 'workspace', folderName: 'a', relativePath: 'x.ts' } });
+    const external = bookmark({ id: 'b2', location: { kind: 'external', fsPath: '/tmp/x.ts' } });
+
+    const { groups } = groupByWorkspace({ bookmarks: [inWorkspace, external], folders: [], openWorkspaceOrder: [] });
+
+    expect(groups.map((group) => group.workspace)).toEqual(['a', undefined]);
+  });
+
+  it('已打开的工作区按窗口顺序排在前面，其余按名称排序', () => {
+    const folders = [
+      folder({ id: 'f-b', workspace: 'b项目' }),
+      folder({ id: 'f-a', workspace: 'a项目' }),
+      folder({ id: 'f-z', workspace: 'z项目' }),
+    ];
+
+    const { groups } = groupByWorkspace({ bookmarks: [], folders, openWorkspaceOrder: ['z项目', 'b项目'] });
+
+    expect(groups.map((group) => group.workspace)).toEqual(['z项目', 'b项目', 'a项目']);
+  });
+
+  it('诊断信息按分组合并', () => {
+    const orphan = bookmark({ id: 'b1', location: { kind: 'workspace', folderName: 'a', relativePath: 'x.ts' }, folderId: 'gone' });
+
+    const { diagnostics } = groupByWorkspace({
+      bookmarks: [orphan],
+      folders: [],
+      deletedFolderIds: new Set(['gone']),
+      openWorkspaceOrder: [],
+    });
+
+    expect(diagnostics.resolvableOrphans).toEqual(['b1']);
+  });
+});
+
+function idOf(node: ContentNode): string {
   return node.kind === 'folder' ? node.folder.id : node.bookmark.id;
 }
 
-function childrenOf(node: TreeNode): TreeNode[] {
+function childrenOf(node: ContentNode): ContentNode[] {
   return node.kind === 'folder' ? node.children : [];
 }
 
-function collectIds(nodes: readonly TreeNode[]): string[] {
+function collectIds(nodes: readonly ContentNode[]): string[] {
   return nodes.flatMap((node) => [idOf(node), ...collectIds(childrenOf(node))]);
 }
 
-function depthOf(nodes: readonly TreeNode[]): number {
+function depthOf(nodes: readonly ContentNode[]): number {
   return nodes.length === 0 ? 0 : 1 + Math.max(...nodes.map((node) => depthOf(childrenOf(node))));
 }

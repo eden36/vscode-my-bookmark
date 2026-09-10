@@ -85,6 +85,17 @@ describe('共享状态解析', () => {
     expect(materializeBookmarks(parseSharedState(raw))).toEqual([]);
   });
 
+  it('跳过缺少 workspace 字段的文件夹记录', () => {
+    // 旧版本写入的文件夹没有 workspace 字段；不兼容旧数据，直接按无效记录跳过。
+    const state = createEmptySharedState();
+    const raw = JSON.parse(serializeSharedState(state));
+    const legacy = folder({ id: 'legacy' }) as unknown as Record<string, unknown>;
+    delete legacy['workspace'];
+    raw.folders['legacy'] = { revision: 1, deviceId: 'a', value: legacy };
+
+    expect(materializeFolders(parseSharedState(raw))).toEqual([]);
+  });
+
   it('记录骨架非法时整体拒绝', () => {
     const raw = JSON.parse(serializeSharedState(createEmptySharedState()));
     raw.bookmarks['bad'] = { deviceId: 'a', value: bookmark() };

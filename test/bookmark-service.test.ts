@@ -235,6 +235,166 @@ describe('BookmarkService 拖拽排序', () => {
     expect(compareOrder(source.order, 'a1')).toBeGreaterThan(0);
     expect(compareOrder(source.order, 'a3')).toBeLessThan(0);
   });
+
+  it('按原有顺序而非选中顺序分配新序键', async () => {
+    const { service, storage } = context;
+    await service.toggleLines(uri, lines(1, 2, 3, 4));
+    const [first, second, third, target] = service.getAllBookmarks();
+
+    // 选中顺序故意与树里的顺序相反：结果仍应保留 first、second、third 原有的相对次序。
+    await service.moveAfterBookmark([third!.id, first!.id, second!.id], target!.id);
+
+    const sorted = [...storage.view.bookmarks]
+      .sort((left, right) => compareOrder(left.order, right.order))
+      .map((item) => item.id);
+    expect(sorted).toEqual([target!.id, first!.id, second!.id, third!.id]);
+  });
+
+  it('目标之后已存在相同 order 的同级项时仍能插入有效区间', async () => {
+    const { service, storage } = context;
+    storage.view = {
+      bookmarks: [
+        bookmark({ id: 'target', order: 'a1' }),
+        // 两台设备并发追加会算出相同的 order；插入时不能因此产生非法区间。
+        bookmark({ id: 'tie', order: 'a2' }),
+        bookmark({ id: 'tie-2', order: 'a2' }),
+      ],
+      folders: [],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+
+    await service.moveAfterBookmark(['tie-2'], 'target');
+
+    expect(storage.view.bookmarks.find((item) => item.id === 'tie-2')!.order)
+      .not.toBe(storage.view.bookmarks.find((item) => item.id === 'target')!.order);
+  });
+
+  it('跨工作区拖拽整体拒绝，不产生写入', async () => {
+    const { service, storage } = context;
+    storage.view = {
+      bookmarks: [
+        bookmark({ id: 'here', location: { kind: 'workspace', folderName: 'a', relativePath: 'x.ts' } }),
+        bookmark({ id: 'there-target', location: { kind: 'workspace', folderName: 'b', relativePath: 'y.ts' } }),
+      ],
+      folders: [folder({ id: 'there-folder', workspace: 'b' })],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+    const before = storage.mutations.length;
+
+    await expect(service.moveAfterBookmark(['here'], 'there-target')).rejects.toThrow('不能移动到其他工作区');
+    await expect(service.moveToFolder(['here'], 'there-folder', 'b')).rejects.toThrow('不能移动到其他工作区');
+    expect(storage.mutations).toHaveLength(before);
+  });
+
+  it('拖到空白处：各项目回到自己所属工作区的根级，互不干扰排序', async () => {
+    const { service, storage } = context;
+    storage.view = {
+      bookmarks: [
+        bookmark({
+          id: 'a-child',
+          location: { kind: 'workspace', folderName: 'a', relativePath: 'x.ts' },
+          folderId: 'a-folder',
+        }),
+        bookmark({
+          id: 'b-child',
+          location: { kind: 'workspace', folderName: 'b', relativePath: 'y.ts' },
+          folderId: 'b-folder',
+        }),
+      ],
+      folders: [folder({ id: 'a-folder', workspace: 'a' }), folder({ id: 'b-folder', workspace: 'b' })],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+
+    await service.moveToOwnRoot(['a-child', 'b-child']);
+
+    const aChild = storage.view.bookmarks.find((item) => item.id === 'a-child')!;
+    const bChild = storage.view.bookmarks.find((item) => item.id === 'b-child')!;
+    expect(aChild.folderId).toBeUndefined();
+    expect(bChild.folderId).toBeUndefined();
+  });
+
+  it('拖到工作区分组节点上：移到该工作区根级，工作区外书签不受影响', async () => {
+    const { service, storage } = context;
+    storage.view = {
+      bookmarks: [
+        bookmark({
+          id: 'child',
+          location: { kind: 'workspace', folderName: 'a', relativePath: 'x.ts' },
+          folderId: 'a-folder',
+        }),
+      ],
+      folders: [folder({ id: 'a-folder', workspace: 'a' })],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+
+    await service.moveToFolder(['child'], undefined, 'a');
+
+    expect(storage.view.bookmarks.find((item) => item.id === 'child')!.folderId).toBeUndefined();
+  });
+
+  it('文件夹拖到自己的后代文件夹上会被拒绝', async () => {
+    const { service, storage } = context;
+    storage.view = {
+      bookmarks: [],
+      folders: [
+        folder({ id: 'parent', workspace: 'demo' }),
+        folder({ id: 'child', workspace: 'demo', parentId: 'parent' }),
+      ],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+    const before = storage.mutations.length;
+
+    await service.moveToFolder(['parent'], 'child', 'demo');
+
+    expect(storage.view.folders.find((item) => item.id === 'parent')!.parentId).toBeUndefined();
+    expect(storage.mutations).toHaveLength(before);
+  });
+});
+
+describe('BookmarkService 上移下移', () => {
+  it('根级调序只在同一工作区内进行，不会跳到其他工作区的项目', async () => {
+    const { service, storage } = context;
+    storage.view = {
+      bookmarks: [
+        bookmark({ id: 'a1', location: { kind: 'workspace', folderName: 'a', relativePath: 'x.ts' }, order: 'a1' }),
+        // b 工作区的项目排在 a1 与 a2 的 order 之间，但视觉上并不相邻，不应被当作 a1 的下一个兄弟。
+        bookmark({ id: 'b1', location: { kind: 'workspace', folderName: 'b', relativePath: 'y.ts' }, order: 'a15' }),
+        bookmark({ id: 'a2', location: { kind: 'workspace', folderName: 'a', relativePath: 'z.ts' }, order: 'a2' }),
+      ],
+      folders: [],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+
+    await service.moveBy('a1', 1);
+
+    const a1 = storage.view.bookmarks.find((item) => item.id === 'a1')!;
+    const a2 = storage.view.bookmarks.find((item) => item.id === 'a2')!;
+    const b1 = storage.view.bookmarks.find((item) => item.id === 'b1')!;
+    expect(compareOrder(a2.order, a1.order)).toBeLessThan(0);
+    expect(b1.order).toBe('a15');
+  });
+});
+
+describe('BookmarkService 新建文件夹', () => {
+  it('记录调用方给定的工作区', async () => {
+    const { service, storage } = context;
+
+    await service.createFolder('分组', undefined, '当前项目');
+
+    expect(storage.view.folders[0]!.workspace).toBe('当前项目');
+  });
 });
 
 describe('BookmarkService 失效标记', () => {
@@ -317,7 +477,7 @@ describe('BookmarkService 全部书签', () => {
 });
 
 describe('BookmarkService 工作区范围', () => {
-  it('只保留包含当前工作区书签的目录及其父目录', () => {
+  it('只保留属于当前工作区的目录，与其中是否有书签无关', () => {
     const { service, storage } = context;
     setWorkspaceFolders([{ name: '当前项目', uri: vscode.Uri.file('D:/current') }]);
     storage.view = {
@@ -336,23 +496,61 @@ describe('BookmarkService 工作区范围', () => {
         }),
       ],
       folders: [
-        folder({ id: 'current-parent', name: '当前父目录', order: 'a1' }),
-        folder({ id: 'current-child', name: '当前子目录', parentId: 'current-parent', order: 'a1' }),
-        folder({ id: 'other-parent', name: '其他父目录', order: 'a2' }),
-        folder({ id: 'other-child', name: '其他子目录', parentId: 'other-parent', order: 'a1' }),
-        folder({ id: 'empty', name: '空目录', order: 'a3' }),
+        folder({ id: 'current-parent', name: '当前父目录', workspace: '当前项目', order: 'a1' }),
+        folder({ id: 'current-child', name: '当前子目录', workspace: '当前项目', parentId: 'current-parent', order: 'a1' }),
+        folder({ id: 'other-parent', name: '其他父目录', workspace: '其他项目', order: 'a2' }),
+        folder({ id: 'other-child', name: '其他子目录', workspace: '其他项目', parentId: 'other-parent', order: 'a1' }),
+        // 空文件夹没有任何书签，但只要 workspace 属于当前工作区就该显示——这是文件夹归属
+        // 工作区（而不是从其中的书签推导）之后才能保证的：空文件夹不再因为「摸不到书签」而消失。
+        folder({ id: 'empty', name: '空目录', workspace: '当前项目', order: 'a3' }),
       ],
       positions: new Map(),
       deletedFolderIds: new Set(),
     };
     service.refreshFromStorage();
 
-    const root = service.getTree()[0]!;
-    expect(root.kind).toBe('folder');
-    if (root.kind !== 'folder') return;
-    expect(root.folder.id).toBe('current-parent');
-    expect(root.children).toHaveLength(1);
-    expect(root.children[0]).toMatchObject({ kind: 'folder', folder: { id: 'current-child' } });
+    const roots = service.getTree();
+    expect(roots.map((node) => (node.kind === 'folder' ? node.folder.id : node.kind))).toEqual(['current-parent', 'empty']);
+    const parent = roots[0]!;
+    if (parent.kind !== 'folder') return;
+    expect(parent.children).toHaveLength(1);
+    expect(parent.children[0]).toMatchObject({ kind: 'folder', folder: { id: 'current-child' } });
+  });
+
+  it('打开多个工作区时按工作区分组显示，已打开的排在前面', () => {
+    const { service, storage } = context;
+    setWorkspaceFolders([
+      { name: 'b项目', uri: vscode.Uri.file('D:/b') },
+      { name: 'a项目', uri: vscode.Uri.file('D:/a') },
+    ]);
+    storage.view = {
+      bookmarks: [
+        bookmark({ location: { kind: 'workspace', folderName: 'a项目', relativePath: 'x.ts' } }),
+        bookmark({ location: { kind: 'workspace', folderName: 'b项目', relativePath: 'x.ts' } }),
+      ],
+      folders: [],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+
+    const roots = service.getTree();
+    expect(roots).toHaveLength(2);
+    expect(roots.map((node) => (node.kind === 'workspace' ? node.workspace : undefined))).toEqual(['b项目', 'a项目']);
+  });
+
+  it('单个工作区时不显示分组节点', () => {
+    const { service, storage } = context;
+    setWorkspaceFolders([{ name: '当前项目', uri: vscode.Uri.file('D:/current') }]);
+    storage.view = {
+      bookmarks: [bookmark({ location: { kind: 'workspace', folderName: '当前项目', relativePath: 'x.ts' } })],
+      folders: [],
+      positions: new Map(),
+      deletedFolderIds: new Set(),
+    };
+    service.refreshFromStorage();
+
+    expect(service.getTree()[0]!.kind).toBe('bookmark');
   });
 });
 

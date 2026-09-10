@@ -9,9 +9,19 @@ import { compareOrder } from './order';
  * 很可能只是同步尚未到齐的中间态，自动清理会把暂时的不一致变成永久的数据丢失。
  */
 
-export type TreeNode =
-  | { kind: 'folder'; folder: BookmarkFolder; children: TreeNode[] }
+/** `buildTree` 产出的节点：书签与文件夹，文件夹的子节点同样只会是这两种。 */
+export type ContentNode =
+  | { kind: 'folder'; folder: BookmarkFolder; children: ContentNode[] }
   | { kind: 'bookmark'; bookmark: Bookmark };
+
+/** 工作区分组节点，不对应任何存盘记录，只在渲染时套在真实树的外层，本身不会再嵌套分组。 */
+export interface WorkspaceGroupNode {
+  kind: 'workspace';
+  workspace: string | undefined;
+  children: ContentNode[];
+}
+
+export type TreeNode = WorkspaceGroupNode | ContentNode;
 
 export interface BuildTreeInput {
   bookmarks: readonly Bookmark[];
@@ -39,7 +49,7 @@ export interface TreeDiagnostics {
 }
 
 export interface BuildTreeResult {
-  roots: TreeNode[];
+  roots: ContentNode[];
   diagnostics: TreeDiagnostics;
 }
 
@@ -79,8 +89,8 @@ export function buildTree(input: BuildTreeInput): BuildTreeResult {
   }
 
   const depthTruncated: string[] = [];
-  const buildChildren = (parentId: string | undefined, depth: number): TreeNode[] => {
-    const nodes: TreeNode[] = [];
+  const buildChildren = (parentId: string | undefined, depth: number): ContentNode[] => {
+    const nodes: ContentNode[] = [];
     for (const folder of childFolders.get(parentId) ?? []) {
       if (depth >= MAX_TREE_DEPTH) {
         depthTruncated.push(folder.id);
@@ -102,10 +112,77 @@ export function buildTree(input: BuildTreeInput): BuildTreeResult {
   };
 }
 
-export type NodeComparator = (left: TreeNode, right: TreeNode) => number;
+export interface GroupByWorkspaceInput {
+  bookmarks: readonly Bookmark[];
+  folders: readonly BookmarkFolder[];
+  deletedFolderIds?: ReadonlySet<string>;
+  rank?: (folderId: string) => string;
+  /** 已在本窗口打开的工作区名，按顺序排列，决定分组靠前的顺序；未列出的工作区按名称排在其后。 */
+  openWorkspaceOrder: readonly string[];
+}
+
+export interface GroupByWorkspaceResult {
+  groups: WorkspaceGroupNode[];
+  diagnostics: TreeDiagnostics;
+}
+
+/**
+ * 按工作区把扁平的书签与文件夹分组，各自独立建树。
+ *
+ * 文件夹总是属于某个工作区（`BookmarkFolder.workspace`），书签按 `location` 归属：
+ * `workspace` 位置对应同名分组，`external` 书签没有工作区，单独归入 undefined 分组
+ * （渲染层展示为「工作区外」），且不参与任何文件夹。
+ */
+export function groupByWorkspace(input: GroupByWorkspaceInput): GroupByWorkspaceResult {
+  const byWorkspace = new Map<string, { bookmarks: Bookmark[]; folders: BookmarkFolder[] }>();
+  const external: Bookmark[] = [];
+  const groupOf = (workspace: string): { bookmarks: Bookmark[]; folders: BookmarkFolder[] } => {
+    const existing = byWorkspace.get(workspace);
+    if (existing !== undefined) return existing;
+    const created = { bookmarks: [], folders: [] };
+    byWorkspace.set(workspace, created);
+    return created;
+  };
+
+  for (const folder of input.folders) groupOf(folder.workspace).folders.push(folder);
+  for (const bookmark of input.bookmarks) {
+    if (bookmark.location.kind === 'external') external.push(bookmark);
+    else groupOf(bookmark.location.folderName).bookmarks.push(bookmark);
+  }
+
+  const openIndex = new Map(input.openWorkspaceOrder.map((name, index) => [name, index]));
+  const names = [...byWorkspace.keys()].sort((left, right) => {
+    const leftOpen = openIndex.get(left);
+    const rightOpen = openIndex.get(right);
+    // 已打开的工作区按窗口中的顺序排在前面；其余按名称排序，保证多设备顺序一致。
+    if (leftOpen !== undefined || rightOpen !== undefined) return (leftOpen ?? Infinity) - (rightOpen ?? Infinity);
+    return left.localeCompare(right, 'zh-Hans');
+  });
+
+  const diagnostics: TreeDiagnostics = { resolvableOrphans: [], pendingOrphans: [], cycleBroken: [], depthTruncated: [] };
+  const groups: WorkspaceGroupNode[] = [];
+  const addGroup = (workspace: string | undefined, bookmarks: readonly Bookmark[], folders: readonly BookmarkFolder[]): void => {
+    const result = buildTree({ bookmarks, folders, deletedFolderIds: input.deletedFolderIds, rank: input.rank });
+    diagnostics.resolvableOrphans.push(...result.diagnostics.resolvableOrphans);
+    diagnostics.pendingOrphans.push(...result.diagnostics.pendingOrphans);
+    diagnostics.cycleBroken.push(...result.diagnostics.cycleBroken);
+    diagnostics.depthTruncated.push(...result.diagnostics.depthTruncated);
+    groups.push({ kind: 'workspace', workspace, children: result.roots });
+  };
+
+  for (const name of names) {
+    const group = byWorkspace.get(name)!;
+    addGroup(name, group.bookmarks, group.folders);
+  }
+  if (external.length > 0) addGroup(undefined, external, []);
+
+  return { groups, diagnostics };
+}
+
+export type NodeComparator = (left: ContentNode, right: ContentNode) => number;
 
 /** 按给定比较器递归重排整棵树，用于「按路径 / 创建时间 / 备注」等非手动排序模式。 */
-export function sortTree(nodes: readonly TreeNode[], comparator: NodeComparator): TreeNode[] {
+export function sortTree(nodes: readonly ContentNode[], comparator: NodeComparator): ContentNode[] {
   return [...nodes]
     .map((node) => (node.kind === 'folder'
       ? { ...node, children: sortTree(node.children, comparator) }
@@ -117,7 +194,7 @@ export function sortTree(nodes: readonly TreeNode[], comparator: NodeComparator)
  * 两台设备同时插到同一位置会算出完全相同的 order，此时必须有稳定的次级键，
  * 否则同一份数据在不同设备上的显示顺序会不一致。
  */
-export function compareNodes(left: TreeNode, right: TreeNode): number {
+export function compareNodes(left: ContentNode, right: ContentNode): number {
   const leftKey = left.kind === 'folder' ? left.folder : left.bookmark;
   const rightKey = right.kind === 'folder' ? right.folder : right.bookmark;
   const byOrder = compareOrder(leftKey.order, rightKey.order);
