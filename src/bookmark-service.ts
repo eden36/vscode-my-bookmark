@@ -389,10 +389,7 @@ export class BookmarkService implements vscode.Disposable {
   }
 
   async removeAll(): Promise<void> {
-    await this.apply((view) => ({
-      deleteBookmarks: view.bookmarks.map((item) => item.id),
-      deleteFolders: view.folders.map((item) => item.id),
-    }));
+    await this.storage.clearAllAndIncrementSyncGeneration();
   }
 
   /**

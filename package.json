@@ -2,7 +2,7 @@
   "name": "my-bookmark",
   "displayName": "My Bookmark",
   "description": "支持文件夹分组、自定义备注与手动排序的全局书签管理，跨工作区、跨 Profile、多窗口实时同步。",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "saltcoreyan",
   "license": "MIT",
   "repository": {

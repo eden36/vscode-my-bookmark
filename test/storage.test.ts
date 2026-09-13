@@ -83,6 +83,16 @@ describe('StorageService', () => {
     expect(storage.getView().positions.has('b1')).toBe(false);
   });
 
+  it('清除全部数据时提升同步代次', async () => {
+    await storage.mutate(() => ({ upsertBookmarks: [bookmark({ id: 'b1' })] }));
+
+    await storage.clearAllAndIncrementSyncGeneration();
+
+    expect(storage.getView().bookmarks).toHaveLength(0);
+    expect(storage.getView().folders).toHaveLength(0);
+    expect(storage.getSyncGeneration()).toBe(1);
+  });
+
   it('不给已删除的书签写入位置记录', async () => {
     await storage.updatePositions([{ id: 'never-existed', line: 3 }]);
 

@@ -21,13 +21,19 @@ import {
   type SharedStoreChange,
   type VersionedRecord,
 } from './shared-state';
-import type { SyncManifestV1 } from './sync';
+import {
+  MAX_SYNC_CHUNKS,
+  SYNC_BUCKET_COUNT,
+  type SyncBucketV3,
+  type SyncManifestV1,
+  type SyncManifestV3,
+} from './sync';
 
-const SYNC_MANIFEST_KEY = 'myBookmark.sync.manifest.v1';
-const SYNC_CHUNK_PREFIX = 'myBookmark.sync.chunk.v1.';
+const SYNC_MANIFEST_KEY = 'myBookmark.sync.manifest.v3';
+const SYNC_BUCKET_PREFIX = 'myBookmark.sync.bucket.v3.';
+const LEGACY_SYNC_MANIFEST_KEY = 'myBookmark.sync.manifest.v1';
+const LEGACY_SYNC_CHUNK_PREFIX = 'myBookmark.sync.chunk.v1.';
 // 前缀刻意不用 myBookmark.sync.：这些是每个 Profile 各自的状态，不能被 setKeysForSync 带上云。
-const PROFILE_SNAPSHOTS_KEY = 'myBookmark.profile.snapshots.v1';
-const PROFILE_APPLIED_RESET_KEY = 'myBookmark.profile.appliedReset.v1';
 
 const STATE_FILE = 'state-v1.json';
 const LOCK_FILE = 'state.lock';
@@ -37,7 +43,6 @@ const LOCK_WAIT_MS = 3_000;
 // 重试期间一直持有 state.lock，总退避时间必须明显小于 LOCK_WAIT_MS，否则等锁的窗口会被顶到超时。
 const ATOMIC_WRITE_RETRIES = 5;
 const ATOMIC_WRITE_RETRY_BASE_MS = 40;
-const MAX_SYNC_CHUNKS = 256;
 /** 超过此规模意味着每次写入都要重写一个很大的文件，需要提醒用户清理。 */
 const RECORD_COUNT_WARNING_THRESHOLD = 20_000;
 
@@ -226,59 +231,59 @@ export class StorageService implements vscode.Disposable {
     });
   }
 
-  getSyncManifest(): SyncManifestV1 | undefined {
-    return this.context.globalState.get<SyncManifestV1>(SYNC_MANIFEST_KEY);
+  getSyncManifest(): SyncManifestV3 | undefined {
+    return this.context.globalState.get<SyncManifestV3>(SYNC_MANIFEST_KEY);
   }
 
-  getSyncChunk(snapshotId: string, index: number): string | undefined {
-    return this.context.globalState.get<string>(this.syncChunkKey(snapshotId, index));
+  getSyncBucket(index: number): SyncBucketV3 | undefined {
+    return this.context.globalState.get<SyncBucketV3>(this.syncBucketKey(index));
   }
 
-  async saveSyncSnapshot(manifest: SyncManifestV1, chunks: readonly string[]): Promise<void> {
-    const previous = this.getLocalSnapshots();
-    const current = { snapshotId: manifest.snapshotId, chunkCount: chunks.length };
-    // 保留最近两个快照：其他设备可能还在读上一版的分块。
-    const retained = [current, ...previous.filter((item) => item.snapshotId !== current.snapshotId)].slice(0, 2);
-    // 先按新旧并集注册，保证随后对旧分块的删除动作本身也能同步出去。
-    this.registerSyncKeys(manifest, [...previous, current]);
-    for (let index = 0; index < chunks.length; index += 1) {
-      await this.context.globalState.update(this.syncChunkKey(manifest.snapshotId, index), chunks[index]);
+  getLegacySyncManifest(): SyncManifestV1 | undefined {
+    return this.context.globalState.get<SyncManifestV1>(LEGACY_SYNC_MANIFEST_KEY);
+  }
+
+  getLegacySyncChunk(snapshotId: string, index: number): string | undefined {
+    return this.context.globalState.get<string>(this.legacySyncChunkKey(snapshotId, index));
+  }
+
+  async saveSyncBuckets(buckets: readonly SyncBucketV3[]): Promise<void> {
+    for (const bucket of buckets) {
+      await this.context.globalState.update(this.syncBucketKey(bucket.bucket), bucket);
     }
-    // manifest 是可见性开关，必须在所有分块写完之后才写。
+  }
+
+  async saveSyncManifest(manifest: SyncManifestV3): Promise<void> {
+    // 控制键是 V3 的可见性开关，首次发布或代次变更时必须最后写入。
     await this.context.globalState.update(SYNC_MANIFEST_KEY, manifest);
-    await this.context.globalState.update(PROFILE_SNAPSHOTS_KEY, retained);
-    for (const stale of previous.filter((item) => !retained.some((kept) => kept.snapshotId === item.snapshotId))) {
-      for (let index = 0; index < stale.chunkCount; index += 1) {
-        await this.context.globalState.update(this.syncChunkKey(stale.snapshotId, index), undefined);
-      }
+  }
+
+  async clearLegacySyncSnapshot(manifest: SyncManifestV1): Promise<void> {
+    // 旧分块还处于同步键清单中时先删除，确保 Settings Sync 能把删除操作传播出去。
+    for (let index = 0; index < manifest.chunkCount; index += 1) {
+      await this.context.globalState.update(this.legacySyncChunkKey(manifest.snapshotId, index), undefined);
     }
-    this.registerSyncKeys(manifest, retained);
+    await this.context.globalState.update(LEGACY_SYNC_MANIFEST_KEY, undefined);
+    this.registerSyncKeys();
   }
 
   /**
-   * 登记参与 Settings Sync 的键。必须在读取远端分块之前调用：新设备先收到 manifest，
-   * 据此登记分块键之后，下一轮同步才会把分块本身带下来。
+   * 登记参与 Settings Sync 的键。V3 桶固定，构造期登记后不会再因桶内容变化触发两阶段同步；
+   * V1 键只在迁移完成前临时保留。
+   * profile.* 键是本机各 Profile 各自的状态，刻意不参与同步。
    */
-  registerSyncKeys(manifest = this.getSyncManifest(), snapshots = this.getLocalSnapshots()): void {
-    const references = [...toSnapshotRef(manifest), ...snapshots];
-    const unique = references.filter((item, index) => (
-      references.findIndex((candidate) => candidate.snapshotId === item.snapshotId) === index
+  registerSyncKeys(): void {
+    const legacy = this.getLegacySyncManifest();
+    const chunks = toLegacySnapshotRef(legacy).flatMap((snapshot) => Array.from(
+      { length: snapshot.chunkCount },
+      (_, index) => this.legacySyncChunkKey(snapshot.snapshotId, index),
     ));
     this.context.globalState.setKeysForSync([
       SYNC_MANIFEST_KEY,
-      ...unique.flatMap((item) => Array.from(
-        { length: item.chunkCount },
-        (_, index) => this.syncChunkKey(item.snapshotId, index),
-      )),
+      ...Array.from({ length: SYNC_BUCKET_COUNT }, (_, index) => this.syncBucketKey(index)),
+      LEGACY_SYNC_MANIFEST_KEY,
+      ...chunks,
     ]);
-  }
-
-  getAppliedResetGeneration(): number {
-    return this.context.globalState.get<number>(PROFILE_APPLIED_RESET_KEY, 0);
-  }
-
-  async saveAppliedResetGeneration(generation: number): Promise<void> {
-    await this.context.globalState.update(PROFILE_APPLIED_RESET_KEY, generation);
   }
 
   async mergeRemoteState(remote: SharedStateV1): Promise<boolean> {
@@ -291,6 +296,17 @@ export class StorageService implements vscode.Disposable {
     return changed;
   }
 
+  async resetRemoteState(generation: number): Promise<void> {
+    await this.updateSharedState((state) => {
+      Object.assign(state, createEmptySharedState(), { syncGeneration: generation });
+    }, 'remote');
+  }
+
+  /**
+   * 递增同步代次。
+   *
+   * 删除全部书签时提升代次，使离线设备的旧桶不会在稍后复活已删除记录。
+   */
   async incrementSyncGeneration(): Promise<number> {
     let generation = 0;
     await this.updateSharedState((state) => {
@@ -298,6 +314,13 @@ export class StorageService implements vscode.Disposable {
       generation = state.syncGeneration;
     });
     return generation;
+  }
+
+  async clearAllAndIncrementSyncGeneration(): Promise<void> {
+    await this.updateSharedState((state) => {
+      const generation = state.syncGeneration + 1;
+      Object.assign(state, createEmptySharedState(), { syncGeneration: generation });
+    });
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -496,23 +519,12 @@ export class StorageService implements vscode.Disposable {
     for (const listener of this.listeners) listener(change);
   }
 
-  private getLocalSnapshots(): SyncSnapshotRef[] {
-    const value = this.context.globalState.get<unknown>(PROFILE_SNAPSHOTS_KEY);
-    if (!Array.isArray(value)) return [];
-    return value.flatMap((item) => {
-      if (!item || typeof item !== 'object') return [];
-      const candidate = item as Partial<SyncSnapshotRef>;
-      return typeof candidate.snapshotId === 'string'
-        && Number.isInteger(candidate.chunkCount)
-        && Number(candidate.chunkCount) >= 0
-        && Number(candidate.chunkCount) <= MAX_SYNC_CHUNKS
-        ? [{ snapshotId: candidate.snapshotId, chunkCount: Number(candidate.chunkCount) }]
-        : [];
-    });
+  private legacySyncChunkKey(snapshotId: string, index: number): string {
+    return `${LEGACY_SYNC_CHUNK_PREFIX}${snapshotId}.${index}`;
   }
 
-  private syncChunkKey(snapshotId: string, index: number): string {
-    return `${SYNC_CHUNK_PREFIX}${snapshotId}.${index}`;
+  private syncBucketKey(index: number): string {
+    return `${SYNC_BUCKET_PREFIX}${index}`;
   }
 
   private enqueueStateWrite<T>(operation: () => PromiseLike<T>): Promise<T> {
@@ -550,7 +562,7 @@ function cloneState(state: SharedStateV1): SharedStateV1 {
   return draft;
 }
 
-function toSnapshotRef(manifest: SyncManifestV1 | undefined): SyncSnapshotRef[] {
+function toLegacySnapshotRef(manifest: SyncManifestV1 | undefined): SyncSnapshotRef[] {
   return manifest !== undefined
     && typeof manifest.snapshotId === 'string'
     && /^[a-zA-Z0-9-]{1,80}$/.test(manifest.snapshotId)
